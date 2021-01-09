@@ -2,7 +2,7 @@
   "name": "LanternShadows",
   "author": "Pete",
   "description": "Enables realtime shadows on torches and other light sources. Be careful as this may have a big impact on performance.",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "license": "MIT",
   "icon": "icon.png",
   "banner": "banner.jpg",
