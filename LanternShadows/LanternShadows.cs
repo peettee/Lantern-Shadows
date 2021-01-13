@@ -30,13 +30,16 @@ namespace pp.RaftMods.LanternShadows
 
         private string ModDataDirectory     => Path.Combine(Application.persistentDataPath, "Mods", APP_NAME);
         private string ModConfigFilePath    => Path.Combine(ModDataDirectory, "config.json");
+        private string ModDataFilePath      => Path.Combine(ModDataDirectory, "lightdata.json");
 
-        private static LightShadows LightShadowType => mi_settings.Current.graphics.shadowType == ShadowQuality.All ? LightShadows.Soft :
-                                                        mi_settings.Current.graphics.shadowType == ShadowQuality.HardOnly ? LightShadows.Hard :
-                                                            LightShadows.None;
+        private LightShadows LightShadowType => mi_settings.Current.graphics.shadowType == ShadowQuality.All ? LightShadows.Soft :
+                                                    mi_settings.Current.graphics.shadowType == ShadowQuality.HardOnly ? LightShadows.Hard :
+                                                        LightShadows.None;
 
-        private static List<SSceneLight> mi_sceneLights;
-        private static Settings mi_settings;
+        public Dictionary<string, CLightData[]> SavedLightData { get; private set; } = new Dictionary<string, CLightData[]>();
+
+        private List<SSceneLight> mi_sceneLights;
+        private Settings mi_settings;
 
         private Harmony mi_harmony;
 
@@ -65,7 +68,16 @@ namespace pp.RaftMods.LanternShadows
                 LoadLights(); //mod was reloaded from game
             }
 
+            LoadLightData();
+
             CUtil.Log("LanternShadows v. " + VERSION + " loaded.");
+        }
+
+        public override void WorldEvent_WorldSaved()
+        {
+            base.WorldEvent_WorldSaved();
+
+            SaveLightData();
         }
 
         /// <summary>
@@ -90,15 +102,12 @@ namespace pp.RaftMods.LanternShadows
                         Component.DestroyImmediate(light.Raycastable);
                     }
                 }
-                mi_sceneLights = null;
             }
 
             if (mi_harmony != null)
             {
                 mi_harmony.UnpatchAll(APP_IDENT);
             }
-
-            mi_settings = null;
         }
 
         private void LoadConfig()
@@ -149,25 +158,78 @@ namespace pp.RaftMods.LanternShadows
             }
         }
 
+        private void LoadLightData()
+        {
+            try
+            {
+                if (!File.Exists(ModDataFilePath)) return;
+
+                CLightData[] data = JsonConvert.DeserializeObject<CLightData[]>(File.ReadAllText(ModDataFilePath)) ?? throw new System.Exception("Deserialisation failed.");
+                SavedLightData = data
+                    .GroupBy(_o => _o.SaveName)
+                    .Select(_o => new KeyValuePair<string, CLightData[]>(_o.Key, _o.ToArray()))
+                    .ToDictionary(_o => _o.Key, _o => _o.Value);
+            }
+            catch (System.Exception _e)
+            {
+                CUtil.LogW("Failed to load saved mod data: " + _e.Message + ". Light data wont be loaded.");
+                SavedLightData = new Dictionary<string, CLightData[]>();
+            }
+        }
+
+        private void SaveLightData()
+        {
+            try
+            {
+                if (File.Exists(ModDataFilePath))
+                {
+                    File.Delete(ModDataFilePath);
+                }
+
+                if (SavedLightData.ContainsKey(SaveAndLoad.CurrentGameFileName))
+                {
+                    SavedLightData.Remove(SaveAndLoad.CurrentGameFileName);
+                }
+
+                SavedLightData.Add(
+                    SaveAndLoad.CurrentGameFileName, 
+                    mi_sceneLights
+                        .Where(_o => _o.LightSwitch.UserControlsState)
+                        .Select(_o => new CLightData(SaveAndLoad.CurrentGameFileName, _o.LightSwitch.ObjectIndex, _o.LightSwitch.IsOn))
+                        .ToArray());
+
+                File.WriteAllText(
+                    ModDataFilePath,
+                    JsonConvert.SerializeObject(
+                        SavedLightData.SelectMany(_o => _o.Value).ToArray(),
+                        Formatting.None,
+                        new JsonSerializerSettings()
+                        {
+                            DefaultValueHandling = DefaultValueHandling.Ignore
+                        }) ?? throw new System.Exception("Failed to serialize"));
+            }
+            catch (System.Exception _e)
+            {
+                CUtil.LogW("Failed to save mod data: " + _e.Message + ". Light data wont be saved.");
+            }
+        }
+
         //used for post-loading light sources into mod control. only used if mod is reloaded.
         private void LoadLights()
         {
-            if (RAPI.IsCurrentSceneGame())
+            mi_sceneLights = new List<SSceneLight>();
+
+            var raftLights      = GameObject.FindObjectsOfType<LightSingularity>();
+            var otherLights     = GameObject.FindObjectsOfType<Light>()
+                                            .Where(_o => _o.GetComponentInParent<Block>());
+
+            foreach (var light in raftLights)
             {
-                mi_sceneLights = new List<SSceneLight>();
-
-                var raftLights      = GameObject.FindObjectsOfType<LightSingularity>();
-                var otherLights     = GameObject.FindObjectsOfType<Light>()
-                                                .Where(_o => _o.GetComponentInParent<Block>());
-
-                foreach (var light in raftLights)
-                {
-                    RegisterLight(light.LightComponent, light.GetExternals()?.FirstOrDefault()?.gameObject);
-                }
-                foreach (var light in otherLights)
-                {
-                    RegisterLight(light, light.GetComponentInParent<Block>().gameObject);
-                }
+                RegisterLight(light.LightComponent, light.GetExternals()?.FirstOrDefault()?.gameObject);
+            }
+            foreach (var light in otherLights)
+            {
+                RegisterLight(light, light.GetComponentInParent<Block>().gameObject);
             }
         }
 
@@ -439,11 +501,20 @@ namespace pp.RaftMods.LanternShadows
                     EP2PSend.k_EP2PSendReliable,
                     NetworkChannel.Channel_Game);
             }
+            else if(mi_mod.SavedLightData.ContainsKey(SaveAndLoad.CurrentGameFileName))
+            {
+                var data = mi_mod.SavedLightData[SaveAndLoad.CurrentGameFileName].FirstOrDefault(_o => _o.ObjectID == ObjectIndex);
+                if (data != null)
+                {
+                    UserControlsState = true;
+                    SetLightOn(data.IsOn);
+                }
+            }
         }
 
         private void Update()
         {
-            if (!mi_loaded) return;
+            if (!mi_loaded || CLanternShadows.Config.PreventDayNightLightSwitch) return;
 
             CheckLightState(false);
         }
@@ -458,17 +529,14 @@ namespace pp.RaftMods.LanternShadows
             var isNight =   mi_azureCntrl.timeOfDay.hour > Traverse.Create(mi_nlCntrl).Field("nightTimeStart").GetValue<float>() ||
                             mi_azureCntrl.timeOfDay.hour < Traverse.Create(mi_nlCntrl).Field("nightTimeEnd").GetValue<float>();
 
-            if (!CLanternShadows.Config.PreventDayNightLightSwitch)
+            if (mi_setLightIntensityInfo != null && mi_nlCntrl != null)
             {
-                if (mi_setLightIntensityInfo != null && mi_nlCntrl != null)
-                {
-                    mi_setLightIntensityInfo.Invoke(mi_nlCntrl, new object[] { IsOn ? 1f : 0f });
-                }
-                if ((mi_isNight != isNight || _forceSet) && !UserControlsState)
-                {
-                    mi_isNight = isNight;
-                    SetLightOn(mi_isNight);
-                }
+                mi_setLightIntensityInfo.Invoke(mi_nlCntrl, new object[] { IsOn ? 1f : 0f });
+            }
+            if ((mi_isNight != isNight || _forceSet) && !UserControlsState)
+            {
+                mi_isNight = isNight;
+                SetLightOn(mi_isNight);
             }
         }
 
@@ -482,13 +550,10 @@ namespace pp.RaftMods.LanternShadows
                 return;
             }
 
-            if (CanvasHelper.ActiveMenu != MenuType.None)
-            {
-                mi_canvas.displayTextManager.HideDisplayTexts();
-                return;
-            }
-
-            if (!PlayerItemManager.IsBusy && mi_canvas.CanOpenMenu && Helper.LocalPlayerIsWithinDistance(transform.position, Player.UseDistance + 0.5f))
+            if (CanvasHelper.ActiveMenu == MenuType.None && 
+                !PlayerItemManager.IsBusy && 
+                mi_canvas.CanOpenMenu && 
+                Helper.LocalPlayerIsWithinDistance(transform.position, Player.UseDistance + 0.5f))
             {
                 mi_canvas.displayTextManager.ShowText(IsOn ? "Extinguish" : "Light", MyInput.Keybinds["Interact"].MainKey, 0, 0, true);
                 if (MyInput.GetButtonDown("Interact"))
@@ -661,6 +726,21 @@ namespace pp.RaftMods.LanternShadows
             EnableLightToggle           = true;
             TurnOffParticlesOnDisable   = true;
             EnableShadows               = true;
+        }
+    }
+
+    [System.Serializable]
+    public class CLightData
+    {
+        public string SaveName;
+        public ulong ObjectID;
+        public bool IsOn;
+
+        public CLightData(string _saveName, ulong _objectID, bool _isOn)
+        {
+            SaveName    = _saveName;
+            ObjectID    = _objectID;
+            IsOn        = _isOn;
         }
     }
 
