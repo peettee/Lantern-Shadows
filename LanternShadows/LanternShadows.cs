@@ -389,6 +389,10 @@ namespace pp.RaftMods.LanternShadows
         }
 
         #region PATCHES
+        /// <summary>
+        /// Called whenever a new block is spawned by the local player or network players.
+        /// This patch intercepts this and instead forwards this to mod which checks the block if its a light and handles light registration. The default behaviour is overwritten.
+        /// </summary>
         [HarmonyPatch(typeof(BlockCreator), "CreateBlock")]
         public class CHarmonyPatch_BlockCreator_CreateBlock
         {
@@ -397,6 +401,11 @@ namespace pp.RaftMods.LanternShadows
             private static void BlockCreator_CreateBlock(BlockCreator __instance, Block __result) => Get.OnBlockCreated(__result);
         }
 
+        /// <summary>
+        /// Prevent <see cref="LightSingularityExternal"/> to be merged into <see cref="LightSingularity"/>.
+        /// Raft by default merges light sources of different lantern blocks together to save performance.
+        /// This patch prevents that.
+        /// </summary>
         [HarmonyPatch(typeof(LightSingularity), "RecheckExternalConnection")]
         public class CHarmonyPatch_LightSingularity_RecheckExternalConnection
         {
@@ -405,6 +414,11 @@ namespace pp.RaftMods.LanternShadows
             private static bool LightSingularity_RecheckExternalConnection(LightSingularity __instance) => false;
         }
 
+        /// <summary>
+        /// Prevent <see cref="LightSingularityExternal"/> to be merged into <see cref="LightSingularity"/>.
+        /// Raft by default merges light sources of different lantern blocks together to save performance.
+        /// This patch prevents that.
+        /// </summary>
         [HarmonyPatch(typeof(LightSingularityExternal), "UpdateLightConnectivity")]
         public class CHarmonyPatch_LightSingularityExternal_UpdateLightConnectivity
         {
@@ -414,6 +428,10 @@ namespace pp.RaftMods.LanternShadows
             private static bool LightSingularityExternal_UpdateLightConnectivity(LightSingularityExternal __instance) => false;
         }
 
+        /// <summary>
+        /// Called whenever a new light source is spawned and searching the first time for a <see cref="LightSingularity"/> to merge into.
+        /// This patch intercepts this and instead forwards this to mod which creates new singularity for each light. The default behaviour is overwritten.
+        /// </summary>
         [HarmonyPatch(typeof(LightSingularityExternal), "ChooseWhichLightToBecome")]
         public class CHarmonyPatch_LightSingularityExternal_ChooseWhichLightToBecome
         {
@@ -421,6 +439,11 @@ namespace pp.RaftMods.LanternShadows
             private static bool LightSingularityExternal_ChooseWhichLightToBecome(LightSingularityExternal __instance) => Get.OnLightSourceSpawn(__instance);
         }
 
+        /// <summary>
+        /// Prevent <see cref="LightSingularityExternal"/> to be merged into <see cref="LightSingularity"/>.
+        /// Raft by default merges light sources of different lantern blocks together to save performance.
+        /// This patch prevents that.
+        /// </summary>
         [HarmonyPatch(typeof(LightSingularityManager), "CheckToMergeSingularityWithOtherSingularities")]
         public class CHarmonyPatch_LightSingularityManager_CheckToMergeSingularityWithOtherSingularities
         {
@@ -428,6 +451,9 @@ namespace pp.RaftMods.LanternShadows
             private static bool LightSingularityManager_CheckToMergeSingularityWithOtherSingularities() => false;
         }
 
+        /// <summary>
+        /// Overwrites vanilla light control. This is now handled by <see cref="CLanternSwitch.CheckLightState(bool)"/>.
+        /// </summary>
         [HarmonyPatch(typeof(NightLightController), "Update")]
         public class CHarmonyPatch_NightLightController_Update
         {
@@ -436,6 +462,9 @@ namespace pp.RaftMods.LanternShadows
             private static bool NightLightController_Update() => false;
         }
 
+        /// <summary>
+        /// Called if the current game settings are saved. This happens if the settings window is closed.
+        /// </summary>
         [HarmonyPatch(typeof(Settings), "SaveAll")]
         public class CHarmonyPatch_Settings_SaveAll
         {
@@ -445,6 +474,20 @@ namespace pp.RaftMods.LanternShadows
         #endregion
     }
 
+    /// <summary>
+    /// The behaviour is attached to light sources to control their behaviour. 
+    /// The mod is listening for block creations and if a light block is created this behaviour is attached and initialized.
+    /// Its hijacking <see cref="Message_Battery_OnOff"/> DTO class which is used by raft to indicate a battery state switch.
+    /// The mod passes its <see cref="ELanternRequestType"/> in the batteryUsesLeft member of the class to build up a custom protocol.
+    /// As light objects will never receive the battery event directly, this should not interfere with any vanilla functionality. 
+    /// Mods or any further development of the game could cause this hacky workaround to fail though.
+    /// 
+    /// This class also handles controling light sources, particle effects and studio event emitters (audio sources) if lanterns are switched on and off.
+    /// It does a custom overwrite of the daynightcycle control which is handled by <see cref="NightLightController"/> in vanilla raft, 
+    /// this method is completely ignored by <see cref="CHarmonyPatch_NightLightController_Update"/> and implemented below as <see cref="CheckLightState(bool)"/> called from the switches update method.
+    /// 
+    /// It implements <see cref="IRaycastable"/> which, if being found next to a collider, is getting called by the raft game system once the lantern is looked at.
+    /// </summary>
     [DisallowMultipleComponent] //disallow to really make sure we never get into the situation of components being added twice on mod reload.
     public class CLanternSwitch : MonoBehaviour_ID_Network, IRaycastable
     {
@@ -470,6 +513,11 @@ namespace pp.RaftMods.LanternShadows
 
         private bool mi_loaded = false;
 
+        /// <summary>
+        /// Initializes the lantern switch behaviour providing a mod handle and a scene light wrapper.
+        /// </summary>
+        /// <param name="_mod">A handle to the mod object initializing this switch.</param>
+        /// <param name="_light">Contains references to the block and other components.</param>
         public void Load(CLanternShadows _mod, SSceneLight _light)
         {
             mi_mod                      = _mod;
