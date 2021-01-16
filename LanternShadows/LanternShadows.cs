@@ -293,9 +293,12 @@ namespace pp.RaftMods.LanternShadows
         //called when settings are applied to update all lights shadows
         private void UpdateAllLightShadowType()
         {
-            foreach(var light in mi_sceneLights)
+            if (RAPI.IsCurrentSceneGame())
             {
-                light.LightComponent.shadows = Config.EnableShadows ? LightShadowType : LightShadows.None;
+                foreach (var light in mi_sceneLights)
+                {
+                    light.LightComponent.shadows = Config.EnableShadows ? LightShadowType : LightShadows.None;
+                }
             }
         }
 
