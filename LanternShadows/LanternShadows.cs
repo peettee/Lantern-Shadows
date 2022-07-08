@@ -351,7 +351,7 @@ namespace pp.RaftMods.LanternShadows
             var sManager = ComponentManager<LightSingularityManager>.Value;
             if (!_lightSource.MorphedLightSingularity)
             {
-                sManager.CreateNewSingularityFromMultiple(new[] { _lightSource.gameObject });
+                sManager.CreateNewSingularityFromMultiple(new List<GameObject>() { _lightSource.gameObject });
             }
             return false;
         }
@@ -507,13 +507,13 @@ namespace pp.RaftMods.LanternShadows
         private CanvasHelper mi_canvas;
         private NightLightController mi_nlCntrl;
         private AzureSkyController mi_azureCntrl;
-        private Semih_Network mi_network;
+        private Raft_Network mi_network;
 
         private SSceneLight mi_sceneLight;
         private bool mi_isNight;
 
         private MethodInfo mi_setLightIntensityInfo;
-
+        
         private bool mi_loaded = false;
 
         /// <summary>
@@ -527,7 +527,7 @@ namespace pp.RaftMods.LanternShadows
             mi_sceneLight               = _light;
             mi_nlCntrl                  = mi_sceneLight.LightComponent.GetComponent<NightLightController>();
             mi_setLightIntensityInfo    = typeof(NightLightController).GetMethod("SetLightIntensity", BindingFlags.NonPublic | BindingFlags.Instance);
-            mi_network                  = ComponentManager<Semih_Network>.Value;
+            mi_network                  = ComponentManager<Raft_Network>.Value;
 
             //use our block objects index so we receive RPC calls
             //need to use an existing blockindex as clients/host need to be aware of it
@@ -538,7 +538,7 @@ namespace pp.RaftMods.LanternShadows
 
             mi_loaded = true;
 
-            if (!Semih_Network.IsHost) //request lantern states from host after load
+            if (!Raft_Network.IsHost) //request lantern states from host after load
             {
                 mi_network.SendP2P(
                     mi_network.HostID,
@@ -620,7 +620,7 @@ namespace pp.RaftMods.LanternShadows
                         (int)ELanternRequestType.TOGGLE,
                         IsOn);
 
-                    if (Semih_Network.IsHost)
+                    if (Raft_Network.IsHost)
                     {
                         mi_network.RPC(netMsg, Target.Other, EP2PSend.k_EP2PSendReliable, NetworkChannel.Channel_Game);
                         return;
@@ -644,7 +644,7 @@ namespace pp.RaftMods.LanternShadows
                         (int)ELanternRequestType.RELEASE_AUTO, //indicate to receiving side that we want to switch back to auto control
                         IsOn);
 
-                    if (Semih_Network.IsHost)
+                    if (Raft_Network.IsHost)
                     {
                         mi_network.RPC(netMsg, Target.Other, EP2PSend.k_EP2PSendReliable, NetworkChannel.Channel_Game);
                         return;
@@ -712,7 +712,7 @@ namespace pp.RaftMods.LanternShadows
                     CheckLightState(true);
                     return true;
                 case ELanternRequestType.REQUEST_STATE:  //a client block requested this blocks state, send it back
-                    if (Semih_Network.IsHost)
+                    if (Raft_Network.IsHost)
                     {
                         if (!UserControlsState) return true;
 
