@@ -12,21 +12,24 @@ using UnityEngine.AzureSky;
 namespace pp.RaftMods.LanternShadows
 {
     /// <summary>
-    /// Enables realtime shadows on lantern buildables and other block lights.
+    /// Enables real-time shadows on lantern buildables and other block lights.
     /// Allows lanterns and light sources (modded items as well) to be switched on and off.
     /// <see cref="CLanternSwitch"/> is the behaviour attached to a light sources collider (to intercept interaction ray) for interaction and takes care
-    /// of controling light, particles effects and studio event emitters if a light source is switched off.
+    /// of controlling light, particles effects and studio event emitters if a light source is switched off.
     /// Includes a configuration file stored at <see cref="Application.persistentDataPath"/> raft directory to alter the mod behaviour.
     /// </summary>
     public class CLanternShadows : Mod
     {
         private static CLanternShadows Get = null;
 
-        public const string VERSION     = "1.1.0";
+        public const string VERSION     = "1.2.4";
         public const string APP_NAME    = "LanternShadows";
         public const string APP_IDENT   = "pp.RaftMods." + APP_NAME;
 
-        public static CModConfig Config { get; private set; }
+        /// <summary>
+        /// For support of the Extra Settings API mod this variable needs to have this exact name, so the mod can find it.
+        /// </summary>
+        public static CModConfig ExtraSettingsAPI_Settings = new CModConfig();
 
         private string ModDataDirectory     => Path.Combine(Application.persistentDataPath, "Mods", APP_NAME);
         private string ModConfigFilePath    => Path.Combine(ModDataDirectory, "config.json");
@@ -120,7 +123,7 @@ namespace pp.RaftMods.LanternShadows
                     return;
                 }
 
-                Config = JsonConvert.DeserializeObject<CModConfig>(File.ReadAllText(ModConfigFilePath)) ?? throw new System.Exception("Deserialisation failed.");
+                ExtraSettingsAPI_Settings = JsonConvert.DeserializeObject<CModConfig>(File.ReadAllText(ModConfigFilePath)) ?? throw new System.Exception("De-serialisation failed.");
             }
             catch (System.Exception _e)
             {
@@ -137,15 +140,15 @@ namespace pp.RaftMods.LanternShadows
                     Directory.CreateDirectory(ModDataDirectory);
                 }
 
-                if(Config == null)
+                if(ExtraSettingsAPI_Settings == null)
                 {
-                    Config = new CModConfig();
+                    ExtraSettingsAPI_Settings = new CModConfig();
                 }
 
                 File.WriteAllText(
                     ModConfigFilePath,
                     JsonConvert.SerializeObject(
-                        Config,
+                        ExtraSettingsAPI_Settings,
                         Formatting.Indented,
                         new JsonSerializerSettings()
                         {
@@ -164,7 +167,7 @@ namespace pp.RaftMods.LanternShadows
             {
                 if (!File.Exists(ModDataFilePath)) return;
 
-                CLightData[] data = JsonConvert.DeserializeObject<CLightData[]>(File.ReadAllText(ModDataFilePath)) ?? throw new System.Exception("Deserialisation failed.");
+                CLightData[] data = JsonConvert.DeserializeObject<CLightData[]>(File.ReadAllText(ModDataFilePath)) ?? throw new System.Exception("De-serialisation failed.");
                 SavedLightData = data
                     .GroupBy(_o => _o.SaveName)
                     .Select(_o => new KeyValuePair<string, CLightData[]>(_o.Key, _o.ToArray()))
@@ -179,8 +182,11 @@ namespace pp.RaftMods.LanternShadows
 
         private void SaveLightData()
         {
+            if (mi_sceneLights == null) return;
+
             try
             {
+
                 if (File.Exists(ModDataFilePath))
                 {
                     File.Delete(ModDataFilePath);
@@ -251,7 +257,7 @@ namespace pp.RaftMods.LanternShadows
             sceneLight.BlockObject      = block;
             sceneLight.LightComponent   = _light;
 
-            if (Config.EnableLightToggle)
+            if (ExtraSettingsAPI_Settings.EnableLightToggle)
             {
                 var col = _blockObject.GetComponentInChildren<Collider>();
                 if (!col) return;
@@ -283,7 +289,7 @@ namespace pp.RaftMods.LanternShadows
                 sceneLight.LightSwitch.Load(this, sceneLight);
             }
 
-            _light.shadows = Config.EnableShadows ? LightShadowType : LightShadows.None;
+            _light.shadows = ExtraSettingsAPI_Settings.EnableShadows ? LightShadowType : LightShadows.None;
             if (!mi_sceneLights.Any(_o => _o.LightComponent == _light))
             {
                 mi_sceneLights.Add(sceneLight);
@@ -293,11 +299,11 @@ namespace pp.RaftMods.LanternShadows
         //called when settings are applied to update all lights shadows
         private void UpdateAllLightShadowType()
         {
-            if (RAPI.IsCurrentSceneGame())
+            if (RAPI.IsCurrentSceneGame() && mi_sceneLights != null)
             {
                 foreach (var light in mi_sceneLights)
                 {
-                    light.LightComponent.shadows = Config.EnableShadows ? LightShadowType : LightShadows.None;
+                    light.LightComponent.shadows = ExtraSettingsAPI_Settings.EnableShadows ? LightShadowType : LightShadows.None;
                 }
             }
         }
@@ -338,7 +344,7 @@ namespace pp.RaftMods.LanternShadows
 
         /// <summary>
         /// Called whenever a new light source attempts to create a singularity.
-        /// By default, light sources are created as <see cref="LightSingularityExternal"/> which can be merged into <see cref="LightSingularity"/> to reduce performance impact of realtime lights.
+        /// By default, light sources are created as <see cref="LightSingularityExternal"/> which can be merged into <see cref="LightSingularity"/> to reduce performance impact of real-time lights.
         /// This mod prevents this step and creates a singularity for each external, meaning one <see cref="Light"/> for each lantern or modded light source.
         /// </summary>
         /// <param name="_lightSource">The light source searching trying to merge.</param>
@@ -485,8 +491,8 @@ namespace pp.RaftMods.LanternShadows
     /// As light objects will never receive the battery event directly, this should not interfere with any vanilla functionality. 
     /// Mods or any further development of the game could cause this hacky workaround to fail though.
     /// 
-    /// This class also handles controling light sources, particle effects and studio event emitters (audio sources) if lanterns are switched on and off.
-    /// It does a custom overwrite of the daynightcycle control which is handled by <see cref="NightLightController"/> in vanilla raft, 
+    /// This class also handles controlling light sources, particle effects and studio event emitters (audio sources) if lanterns are switched on and off.
+    /// It does a custom overwrite of the day/night-cycle control which is handled by <see cref="NightLightController"/> in vanilla raft, 
     /// this method is completely ignored by <see cref="CHarmonyPatch_NightLightController_Update"/> and implemented below as <see cref="CheckLightState(bool)"/> called from the switches update method.
     /// 
     /// It implements <see cref="IRaycastable"/> which, if being found next to a collider, is getting called by the raft game system once the lantern is looked at.
@@ -530,7 +536,7 @@ namespace pp.RaftMods.LanternShadows
             mi_network                  = ComponentManager<Raft_Network>.Value;
 
             //use our block objects index so we receive RPC calls
-            //need to use an existing blockindex as clients/host need to be aware of it
+            //need to use an existing block-index as clients/host need to be aware of it
             ObjectIndex = mi_sceneLight.BlockObject.ObjectIndex;
             NetworkIDManager.AddNetworkID(this);
 
@@ -547,7 +553,7 @@ namespace pp.RaftMods.LanternShadows
                         mi_network.NetworkIDManager,
                         mi_network.LocalSteamID, 
                         this.ObjectIndex, 
-                        (int)ELanternRequestType.REQUEST_STATE, //we use the battery uses int to pass our custom command type 
+                        (int)ELanternRequestType.REQUEST_STATE, //we use the battery uses integer to pass our custom command type 
                         IsOn),
                     EP2PSend.k_EP2PSendReliable,
                     NetworkChannel.Channel_Game);
@@ -565,7 +571,7 @@ namespace pp.RaftMods.LanternShadows
 
         private void Update()
         {
-            if (!mi_loaded || CLanternShadows.Config.PreventDayNightLightSwitch) return;
+            if (!mi_loaded || CLanternShadows.ExtraSettingsAPI_Settings.PreventDayNightLightSwitch) return;
 
             CheckLightState(false);
         }
@@ -579,6 +585,7 @@ namespace pp.RaftMods.LanternShadows
 
             var isNight =   mi_azureCntrl.timeOfDay.hour > Traverse.Create(mi_nlCntrl).Field("nightTimeStart").GetValue<float>() ||
                             mi_azureCntrl.timeOfDay.hour < Traverse.Create(mi_nlCntrl).Field("nightTimeEnd").GetValue<float>();
+
 
             if (mi_setLightIntensityInfo != null && mi_nlCntrl != null)
             {
@@ -676,22 +683,24 @@ namespace pp.RaftMods.LanternShadows
 
             if (!mi_sceneLight.BlockObject) return;
 
-            var ps = mi_sceneLight.BlockObject.GetComponentInChildren<ParticleSystem>();
-            var se = mi_sceneLight.BlockObject.GetComponentInChildren<StudioEventEmitter>();
+            ParticleSystem[] ps = mi_sceneLight.BlockObject.GetComponentsInChildren<ParticleSystem>();
+            StudioEventEmitter se = mi_sceneLight.BlockObject.GetComponentInChildren<StudioEventEmitter>();
+            //get any additional meshrenderer components that are on the particles layer to make sure any additional billboards or effects are disabled with the light
+            IEnumerable<MeshRenderer> additionalParticleRenderers = mi_sceneLight.BlockObject.GetComponentsInChildren<MeshRenderer>(true).Where(_o => _o.gameObject.layer == LayerMask.NameToLayer("Particles"));
 
-            if (CLanternShadows.Config.TurnOffParticlesOnDisable)
+            if (_isLightOn)
             {
-                if (_isLightOn)
-                {
-                    if (ps) ps.Play(true);
-                    if (se) se.Play();
-                }
-                else
-                {
-                    if (ps) ps.Stop(true);
-                    if (se) se.Stop();
-                }
+                foreach(var p in ps) p.Play();
+                if (se) se.Play();
+                foreach (var renderer in additionalParticleRenderers) renderer.enabled = true;
             }
+            else if(CLanternShadows.ExtraSettingsAPI_Settings.TurnOffParticlesOnDisable)
+            {
+                foreach (var p in ps) p.Stop();
+                if (se) se.Stop();
+                foreach (var renderer in additionalParticleRenderers) renderer.enabled = false;
+            }
+
             mi_sceneLight.LightComponent.enabled = _isLightOn;
         }
 
@@ -705,7 +714,7 @@ namespace pp.RaftMods.LanternShadows
             Message_Battery_OnOff msg = _msg as Message_Battery_OnOff;
             if (msg == null) return base.Deserialize(_msg, _remoteID);
 
-            switch((ELanternRequestType)msg.batteryUsesLeft) //we use the usesleft value as our command type carrier
+            switch((ELanternRequestType)msg.batteryUsesLeft) //we use the uses left value as our command type carrier
             {
                 case ELanternRequestType.RELEASE_AUTO:
                     UserControlsState = false;
@@ -751,11 +760,16 @@ namespace pp.RaftMods.LanternShadows
         public int PreModColliderLayer;
     }
 
+    /// <summary>
+    /// Configuration class representing possible mod configuration values.
+    /// Supports the Extra Settings API mod by using specially named methods which are called by the mod.
+    /// If the ESAPI mod is not available, settings are loaded from this mods own config file.
+    /// </summary>
     [System.Serializable]
     public class CModConfig
     {
         /// <summary>
-        /// Prevents the day and night cykle to switch laterns off/on automatically.
+        /// Prevents the day and night cycle to switch lanterns off/on automatically.
         /// </summary>
         public bool PreventDayNightLightSwitch  ;
         /// <summary>
@@ -767,7 +781,7 @@ namespace pp.RaftMods.LanternShadows
         /// </summary>
         public bool TurnOffParticlesOnDisable   ;
         /// <summary>
-        /// Enable realtime shadows on light sources.
+        /// Enable real-time shadows on light sources.
         /// </summary>
         public bool EnableShadows               ;
 
@@ -777,6 +791,25 @@ namespace pp.RaftMods.LanternShadows
             EnableLightToggle           = true;
             TurnOffParticlesOnDisable   = true;
             EnableShadows               = true;
+        }
+
+        public static bool ExtraSettingsAPI_GetCheckboxState(string _settingName) => true;
+
+        public static bool ExtraSettingsAPI_Loaded = false;
+
+        public void ExtraSettingsAPI_Load() 
+        {
+            ReloadSettings();
+        }
+
+        public void ExtraSettingsAPI_SettingsClose() => ReloadSettings();
+
+        private void ReloadSettings()
+        {
+            PreventDayNightLightSwitch  = ExtraSettingsAPI_GetCheckboxState("PreventDayNightLightSwitch");
+            EnableLightToggle           = ExtraSettingsAPI_GetCheckboxState("EnableLightToggle");
+            TurnOffParticlesOnDisable   = ExtraSettingsAPI_GetCheckboxState("TurnOffParticlesOnDisable");
+            EnableShadows               = ExtraSettingsAPI_GetCheckboxState("EnableShadows");
         }
     }
 

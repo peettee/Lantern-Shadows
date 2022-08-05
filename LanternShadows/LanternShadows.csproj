@@ -1,21 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" DefaultTargets="ModBuild" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
-  <PropertyGroup>
-    <!--
-      Set own raft or appdata folder path in LanternShadows.csproj.user with following content:
-    
-      <PropertyGroup>
-        <RaftFolder>[Your raft folder path]</RaftFolder>
-        <AppDataFolder>[Path of %appdata%]</AppDataFolder> 
-      </PropertyGroup>
-      -->
-    <RaftFolder Condition="'$(RaftFolder)' == ''">D:\Games\Steam\steamapps\common\Raft</RaftFolder>
-    <AppDataFolder Condition="'$(RaftFolder)' == ''">C:\Users\Pete\AppData\Roaming</AppDataFolder>
-  </PropertyGroup>
   <PropertyGroup>
     <LangVersion>7.3</LangVersion>
     <ProjectGuid>{41D2BDD7-E52C-4470-AC81-5F4B496CC559}</ProjectGuid>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -23,9 +12,9 @@
     <ProjectGuid>{41D2BDD7-E52C-4470-AC81-5F4B496CC559}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>EnhancedTorchLight</RootNamespace>
-    <AssemblyName>EnhancedTorchLight</AssemblyName>
-    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <RootNamespace>LanternShadows</RootNamespace>
+    <AssemblyName>LanternShadows</AssemblyName>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
   </PropertyGroup>
@@ -58,124 +47,299 @@
     <None Include="modinfo.json" />
   </ItemGroup>
   <ItemGroup>
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\Assembly-CSharp-firstpass.dll" Include="Assembly-CSharp-firstpass.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\Assembly-CSharp.dll" Include="Assembly-CSharp.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\Autodesk.Fbx.dll" Include="Autodesk.Fbx.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\com.unity.multiplayer-hlapi.Runtime.dll" Include="com.unity.multiplayer-hlapi.Runtime.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\MeshExtension.dll" Include="MeshExtension.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\Mono.Posix.dll" Include="Mono.Posix.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\Mono.Security.dll" Include="Mono.Security.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\mscorlib.dll" Include="mscorlib.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\NavMeshComponents.dll" Include="NavMeshComponents.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\PathCreator.dll" Include="PathCreator.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\Sirenix.OdinInspector.Attributes.dll" Include="Sirenix.OdinInspector.Attributes.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\System.Configuration.dll" Include="System.Configuration.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\System.Core.dll" Include="System.Core.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\System.dll" Include="System.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\System.Security.dll" Include="System.Security.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\System.Xml.dll" Include="System.Xml.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\Tayx.Graphy.dll" Include="Tayx.Graphy.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\Unity.Analytics.DataPrivacy.dll" Include="Unity.Analytics.DataPrivacy.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\Unity.Analytics.StandardEvents.dll" Include="Unity.Analytics.StandardEvents.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\Unity.Analytics.Tracker.dll" Include="Unity.Analytics.Tracker.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\Unity.Formats.Fbx.Runtime.dll" Include="Unity.Formats.Fbx.Runtime.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\Unity.Recorder.dll" Include="Unity.Recorder.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\Unity.RemoteConfig.dll" Include="Unity.RemoteConfig.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\Unity.TextMeshPro.dll" Include="Unity.TextMeshPro.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\Unity.Timeline.dll" Include="Unity.Timeline.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.AccessibilityModule.dll" Include="UnityEngine.AccessibilityModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.AIModule.dll" Include="UnityEngine.AIModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.AndroidJNIModule.dll" Include="UnityEngine.AndroidJNIModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.AnimationModule.dll" Include="UnityEngine.AnimationModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.ARModule.dll" Include="UnityEngine.ARModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.AssetBundleModule.dll" Include="UnityEngine.AssetBundleModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.AudioModule.dll" Include="UnityEngine.AudioModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.ClothModule.dll" Include="UnityEngine.ClothModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.ClusterInputModule.dll" Include="UnityEngine.ClusterInputModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.ClusterRendererModule.dll" Include="UnityEngine.ClusterRendererModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.CoreModule.dll" Include="UnityEngine.CoreModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.CrashReportingModule.dll" Include="UnityEngine.CrashReportingModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.DirectorModule.dll" Include="UnityEngine.DirectorModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.dll" Include="UnityEngine.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.DSPGraphModule.dll" Include="UnityEngine.DSPGraphModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.GameCenterModule.dll" Include="UnityEngine.GameCenterModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.GridModule.dll" Include="UnityEngine.GridModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.HotReloadModule.dll" Include="UnityEngine.HotReloadModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.ImageConversionModule.dll" Include="UnityEngine.ImageConversionModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.IMGUIModule.dll" Include="UnityEngine.IMGUIModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.InputLegacyModule.dll" Include="UnityEngine.InputLegacyModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.InputModule.dll" Include="UnityEngine.InputModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.JSONSerializeModule.dll" Include="UnityEngine.JSONSerializeModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.LocalizationModule.dll" Include="UnityEngine.LocalizationModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.ParticleSystemModule.dll" Include="UnityEngine.ParticleSystemModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.PerformanceReportingModule.dll" Include="UnityEngine.PerformanceReportingModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.Physics2DModule.dll" Include="UnityEngine.Physics2DModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.PhysicsModule.dll" Include="UnityEngine.PhysicsModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.ProfilerModule.dll" Include="UnityEngine.ProfilerModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.Purchasing.dll" Include="UnityEngine.Purchasing.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.ScreenCaptureModule.dll" Include="UnityEngine.ScreenCaptureModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.SharedInternalsModule.dll" Include="UnityEngine.SharedInternalsModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.SpatialTracking.dll" Include="UnityEngine.SpatialTracking.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.SpriteMaskModule.dll" Include="UnityEngine.SpriteMaskModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.SpriteShapeModule.dll" Include="UnityEngine.SpriteShapeModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.StreamingModule.dll" Include="UnityEngine.StreamingModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.SubstanceModule.dll" Include="UnityEngine.SubstanceModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.SubsystemsModule.dll" Include="UnityEngine.SubsystemsModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.TerrainModule.dll" Include="UnityEngine.TerrainModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.TerrainPhysicsModule.dll" Include="UnityEngine.TerrainPhysicsModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.TextCoreModule.dll" Include="UnityEngine.TextCoreModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.TextRenderingModule.dll" Include="UnityEngine.TextRenderingModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.TilemapModule.dll" Include="UnityEngine.TilemapModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.TLSModule.dll" Include="UnityEngine.TLSModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.UI.dll" Include="UnityEngine.UI.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.UIElementsModule.dll" Include="UnityEngine.UIElementsModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.UIModule.dll" Include="UnityEngine.UIModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.UmbraModule.dll" Include="UnityEngine.UmbraModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.UNETModule.dll" Include="UnityEngine.UNETModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.UnityAnalyticsModule.dll" Include="UnityEngine.UnityAnalyticsModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.UnityConnectModule.dll" Include="UnityEngine.UnityConnectModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.UnityTestProtocolModule.dll" Include="UnityEngine.UnityTestProtocolModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.UnityWebRequestAssetBundleModule.dll" Include="UnityEngine.UnityWebRequestAssetBundleModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.UnityWebRequestAudioModule.dll" Include="UnityEngine.UnityWebRequestAudioModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.UnityWebRequestModule.dll" Include="UnityEngine.UnityWebRequestModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.UnityWebRequestTextureModule.dll" Include="UnityEngine.UnityWebRequestTextureModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.UnityWebRequestWWWModule.dll" Include="UnityEngine.UnityWebRequestWWWModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.VehiclesModule.dll" Include="UnityEngine.VehiclesModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.VFXModule.dll" Include="UnityEngine.VFXModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.VideoModule.dll" Include="UnityEngine.VideoModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.VRModule.dll" Include="UnityEngine.VRModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.WindModule.dll" Include="UnityEngine.WindModule.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.XR.LegacyInputHelpers.dll" Include="UnityEngine.XR.LegacyInputHelpers.dll" />
-    <Reference HintPath="$(RaftFolder)\Raft_Data/Managed\UnityEngine.XRModule.dll" Include="UnityEngine.XRModule.dll" />
-    <Reference HintPath="$(AppDataFolder)\RaftModLoader\binaries\0Harmony.dll" Include="0Harmony.dll" />
-    <Reference HintPath="$(AppDataFolder)\RaftModLoader\binaries\coremod.dll" Include="coremod.dll" />
-    <Reference HintPath="$(AppDataFolder)\RaftModLoader\binaries\HMLCoreLibrary.dll" Include="HMLCoreLibrary.dll" />
-    <Reference HintPath="$(AppDataFolder)\RaftModLoader\binaries\SharpZipLib.dll" Include="SharpZipLib.dll" />
-    <Reference HintPath="$(AppDataFolder)\RaftModLoader\binaries\System.ValueTuple.dll" Include="System.ValueTuple.dll" />
+    <Reference Include="Assembly-CSharp-firstpass.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\Assembly-CSharp-firstpass.dll</HintPath>
+    </Reference>
+    <Reference Include="Assembly-CSharp.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\Assembly-CSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="Autodesk.Fbx.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\Autodesk.Fbx.dll</HintPath>
+    </Reference>
+    <Reference Include="com.unity.multiplayer-hlapi.Runtime.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\com.unity.multiplayer-hlapi.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="MeshExtension.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\MeshExtension.dll</HintPath>
+    </Reference>
+    <Reference Include="Mono.Posix.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\Mono.Posix.dll</HintPath>
+    </Reference>
+    <Reference Include="Mono.Security.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\Mono.Security.dll</HintPath>
+    </Reference>
+    <Reference Include="mscorlib.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\mscorlib.dll</HintPath>
+    </Reference>
+    <Reference Include="NavMeshComponents.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\NavMeshComponents.dll</HintPath>
+    </Reference>
+    <Reference Include="PathCreator.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\PathCreator.dll</HintPath>
+    </Reference>
+    <Reference Include="Sirenix.OdinInspector.Attributes.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\Sirenix.OdinInspector.Attributes.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Configuration.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\System.Configuration.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Core.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\System.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="System.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\System.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Security.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\System.Security.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Xml.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\System.Xml.dll</HintPath>
+    </Reference>
+    <Reference Include="Tayx.Graphy.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\Tayx.Graphy.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.Analytics.DataPrivacy.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\Unity.Analytics.DataPrivacy.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.Analytics.StandardEvents.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\Unity.Analytics.StandardEvents.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.Analytics.Tracker.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\Unity.Analytics.Tracker.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.Formats.Fbx.Runtime.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\Unity.Formats.Fbx.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.Recorder.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\Unity.Recorder.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.RemoteConfig.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\Unity.RemoteConfig.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.TextMeshPro.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\Unity.TextMeshPro.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.Timeline.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\Unity.Timeline.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.AccessibilityModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.AccessibilityModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.AIModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.AIModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.AndroidJNIModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.AndroidJNIModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.AnimationModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.AnimationModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.ARModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.ARModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.AssetBundleModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.AssetBundleModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.AudioModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.AudioModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.ClothModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.ClothModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.ClusterInputModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.ClusterInputModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.ClusterRendererModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.ClusterRendererModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.CoreModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.CrashReportingModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.CrashReportingModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.DirectorModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.DirectorModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.DSPGraphModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.DSPGraphModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.GameCenterModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.GameCenterModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.GridModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.GridModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.HotReloadModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.HotReloadModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.ImageConversionModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.ImageConversionModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.IMGUIModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.IMGUIModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.InputLegacyModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.InputLegacyModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.InputModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.InputModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.JSONSerializeModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.JSONSerializeModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.LocalizationModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.LocalizationModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.ParticleSystemModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.ParticleSystemModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.PerformanceReportingModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.PerformanceReportingModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.Physics2DModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.Physics2DModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.PhysicsModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.PhysicsModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.ProfilerModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.ProfilerModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.Purchasing.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.Purchasing.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.ScreenCaptureModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.ScreenCaptureModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.SharedInternalsModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.SharedInternalsModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.SpatialTracking.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.SpatialTracking.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.SpriteMaskModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.SpriteMaskModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.SpriteShapeModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.SpriteShapeModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.StreamingModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.StreamingModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.SubstanceModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.SubstanceModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.SubsystemsModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.SubsystemsModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.TerrainModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.TerrainModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.TerrainPhysicsModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.TerrainPhysicsModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.TextCoreModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.TextCoreModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.TextRenderingModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.TextRenderingModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.TilemapModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.TilemapModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.TLSModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.TLSModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.UI.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.UI.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.UIElementsModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.UIElementsModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.UIModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.UIModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.UmbraModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.UmbraModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.UNETModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.UNETModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.UnityAnalyticsModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.UnityAnalyticsModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.UnityConnectModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.UnityConnectModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.UnityTestProtocolModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.UnityTestProtocolModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.UnityWebRequestAssetBundleModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.UnityWebRequestAssetBundleModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.UnityWebRequestAudioModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.UnityWebRequestAudioModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.UnityWebRequestModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.UnityWebRequestModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.UnityWebRequestTextureModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.UnityWebRequestTextureModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.UnityWebRequestWWWModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.UnityWebRequestWWWModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.VehiclesModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.VehiclesModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.VFXModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.VFXModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.VideoModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.VideoModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.VRModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.VRModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.WindModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.WindModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.XR.LegacyInputHelpers.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.XR.LegacyInputHelpers.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.XRModule.dll">
+      <HintPath>M:\SteamLibrary\steamapps\common\Raft\Raft_Data/Managed\UnityEngine.XRModule.dll</HintPath>
+    </Reference>
+    <Reference Include="0Harmony.dll">
+      <HintPath>C:\Users\Pete\AppData\Roaming\RaftModLoader\binaries\0Harmony.dll</HintPath>
+    </Reference>
+    <Reference Include="coremod.dll">
+      <HintPath>C:\Users\Pete\AppData\Roaming\RaftModLoader\binaries\coremod.dll</HintPath>
+    </Reference>
+    <Reference Include="HMLCoreLibrary.dll">
+      <HintPath>C:\Users\Pete\AppData\Roaming\RaftModLoader\binaries\HMLCoreLibrary.dll</HintPath>
+    </Reference>
+    <Reference Include="SharpZipLib.dll">
+      <HintPath>C:\Users\Pete\AppData\Roaming\RaftModLoader\binaries\SharpZipLib.dll</HintPath>
+    </Reference>
+    <Reference Include="System.ValueTuple.dll">
+      <HintPath>C:\Users\Pete\AppData\Roaming\RaftModLoader\binaries\System.ValueTuple.dll</HintPath>
+    </Reference>
   </ItemGroup>
-  
-  <Target Name="ModBuild">
-    <PropertyGroup>
-      <ModTempPath>build</ModTempPath>
-      <ModFilePath>$(SolutionDir)$(ProjectName).rmod</ModFilePath>
-    </PropertyGroup>
-    <ItemGroup>
-      <ModItem Include="**" />
-      <ModItem Remove="*.csproj*" />
-      <ModItem Remove="bin\**" />
-      <ModItem Remove="obj\**" />
-    </ItemGroup>
-    
-    <Delete Files="$(ModFilePath)" Condition="Exists('$(ModFilePath)')" />
-    <RemoveDir Directories="$(ModTempPath)" Condition="Exists('$(ModTempPath)')" />
-    
-    <Copy SourceFiles="@(ModItem)" DestinationFolder="$(ModTempPath)" />
-    <ZipDirectory SourceDirectory="$(ModTempPath)" DestinationFile="$(ModFilePath)" />
-
-    <RemoveDir Directories="$(ModTempPath)" />
-
-    <Message Importance="high" Text="🔰 =============== 🔰 MOD BUILD SCRIPT 🔰 =============== 🔰" />
-    <Message Importance="high" Text="✔️ Mod successfully built as $(SolutionDir)$(ProjectName).rmod ✔️" />
-    <Message Importance="high" Text="===========================================================" />
-  </Target>
+  <PropertyGroup>
+    <PreBuildEvent>
+    </PreBuildEvent>
+  </PropertyGroup>
+  <PropertyGroup>
+    <PostBuildEvent>call cd $(SolutionDir)
+call build.bat
+echo 🔰 =============== 🔰 MOD BUILD SCRIPT 🔰 =============== 🔰
+echo ✔️ Mod successfully built as $(SolutionDir)$(ProjectName).rmod ✔️
+echo ===========================================================
+    </PostBuildEvent>
+  </PropertyGroup>
 </Project>

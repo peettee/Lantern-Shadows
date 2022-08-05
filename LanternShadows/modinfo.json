@@ -1,13 +1,41 @@
 {
-  "name": "LanternShadows",
+  "name": "Lantern Shadows",
   "author": "Pete",
   "description": "Enables realtime shadows on lanterns and allows them to be switched on/off individually. Be careful as shadows may have a big impact on performance.",
-  "version": "1.2.1",
+  "version": "1.2.4",
   "license": "MIT",
   "icon": "icon.png",
   "banner": "banner.jpg",
-  "gameVersion": "12.01",
+  "gameVersion": "1.08",
   "updateUrl": "https://www.raftmodding.com/api/v1/mods/lantern-shadows/version.txt",
   "isModPermanent": false,
-  "excludedFiles": []
+  "excludedFiles": [],
+  "modSettings": [
+    {
+      "type": "checkbox",
+      "name": "PreventDayNightLightSwitch",
+      "text": "Prevent autom. day/night light switch",
+      "default": false
+    },
+    {
+      "type": "checkbox",
+      "name": "EnableLightToggle",
+      "text": "Enable manual light switch",
+      "access": "mainmenu",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "name": "TurnOffParticlesOnDisable",
+      "text": "Switch off particle effects",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "name": "EnableShadows",
+      "text": "Enable shadows",
+      "access": "mainmenu",
+      "default": true
+    }
+  ]
 }
