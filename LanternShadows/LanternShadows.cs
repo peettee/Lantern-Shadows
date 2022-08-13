@@ -518,6 +518,10 @@ namespace pp.RaftMods.LanternShadows
         private SSceneLight mi_sceneLight;
         private bool mi_isNight;
 
+        private ParticleSystemLOD mi_particleLOD;
+        private ParticleSystem[] mi_lanternParticles;
+        private IEnumerable<MeshRenderer> mi_additionalParticleRenderers;
+
         private MethodInfo mi_setLightIntensityInfo;
         
         private bool mi_loaded = false;
@@ -534,6 +538,11 @@ namespace pp.RaftMods.LanternShadows
             mi_nlCntrl                  = mi_sceneLight.LightComponent.GetComponent<NightLightController>();
             mi_setLightIntensityInfo    = typeof(NightLightController).GetMethod("SetLightIntensity", BindingFlags.NonPublic | BindingFlags.Instance);
             mi_network                  = ComponentManager<Raft_Network>.Value;
+
+            mi_particleLOD = mi_sceneLight.BlockObject.GetComponentInChildren<ParticleSystemLOD>(true);
+            mi_lanternParticles = mi_sceneLight.BlockObject.GetComponentsInChildren<ParticleSystem>(true);
+            //get any additional meshrenderer components that are on the particles layer to make sure any additional billboards or effects are disabled with the light
+            mi_additionalParticleRenderers = mi_sceneLight.BlockObject.GetComponentsInChildren<MeshRenderer>(true).Where(_o => _o.gameObject.layer == LayerMask.NameToLayer("Particles"));
 
             //use our block objects index so we receive RPC calls
             //need to use an existing block-index as clients/host need to be aware of it
@@ -683,22 +692,25 @@ namespace pp.RaftMods.LanternShadows
 
             if (!mi_sceneLight.BlockObject) return;
 
-            ParticleSystem[] ps = mi_sceneLight.BlockObject.GetComponentsInChildren<ParticleSystem>();
-            StudioEventEmitter se = mi_sceneLight.BlockObject.GetComponentInChildren<StudioEventEmitter>();
-            //get any additional meshrenderer components that are on the particles layer to make sure any additional billboards or effects are disabled with the light
-            IEnumerable<MeshRenderer> additionalParticleRenderers = mi_sceneLight.BlockObject.GetComponentsInChildren<MeshRenderer>(true).Where(_o => _o.gameObject.layer == LayerMask.NameToLayer("Particles"));
+            if (mi_particleLOD && CLanternShadows.ExtraSettingsAPI_Settings.TurnOffParticlesOnDisable)
+            {
+                mi_particleLOD.enabled = _isLightOn;
+            }
 
             if (_isLightOn)
             {
-                foreach(var p in ps) p.Play();
-                if (se) se.Play();
-                foreach (var renderer in additionalParticleRenderers) renderer.enabled = true;
+                foreach (var p in mi_lanternParticles)
+                {
+                    var main = p.main;
+                    main.prewarm = false; //disable fire effect pre-warm so it is smoothly enabled instead popping in
+                    p.Play();
+                }
+                foreach (var renderer in mi_additionalParticleRenderers) renderer.enabled = true;
             }
             else if(CLanternShadows.ExtraSettingsAPI_Settings.TurnOffParticlesOnDisable)
             {
-                foreach (var p in ps) p.Stop();
-                if (se) se.Stop();
-                foreach (var renderer in additionalParticleRenderers) renderer.enabled = false;
+                foreach (var p in mi_lanternParticles) p.Stop();
+                foreach (var renderer in mi_additionalParticleRenderers) renderer.enabled = false;
             }
 
             mi_sceneLight.LightComponent.enabled = _isLightOn;
