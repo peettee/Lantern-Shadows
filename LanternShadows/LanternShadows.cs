@@ -22,7 +22,7 @@ namespace pp.RaftMods.LanternShadows
     {
         private static CLanternShadows Get = null;
 
-        public const string VERSION     = "1.2.4";
+        public const string VERSION     = "1.2.5";
         public const string APP_NAME    = "LanternShadows";
         public const string APP_IDENT   = "pp.RaftMods." + APP_NAME;
 
@@ -518,7 +518,8 @@ namespace pp.RaftMods.LanternShadows
         private SSceneLight mi_sceneLight;
         private bool mi_isNight;
 
-        private ParticleSystemLOD mi_particleLOD;
+        private ParticleSystemLOD[] mi_particleLOD;
+        private StudioEventEmitter mi_soundEmitter;
         private ParticleSystem[] mi_lanternParticles;
         private IEnumerable<MeshRenderer> mi_additionalParticleRenderers;
 
@@ -539,8 +540,9 @@ namespace pp.RaftMods.LanternShadows
             mi_setLightIntensityInfo    = typeof(NightLightController).GetMethod("SetLightIntensity", BindingFlags.NonPublic | BindingFlags.Instance);
             mi_network                  = ComponentManager<Raft_Network>.Value;
 
-            mi_particleLOD = mi_sceneLight.BlockObject.GetComponentInChildren<ParticleSystemLOD>(true);
-            mi_lanternParticles = mi_sceneLight.BlockObject.GetComponentsInChildren<ParticleSystem>(true);
+            mi_particleLOD          = mi_sceneLight.BlockObject.GetComponentsInChildren<ParticleSystemLOD>(true);
+            mi_lanternParticles     = mi_sceneLight.BlockObject.GetComponentsInChildren<ParticleSystem>(true);
+            mi_soundEmitter         = mi_sceneLight.BlockObject.GetComponentInChildren<StudioEventEmitter>(true);
             //get any additional meshrenderer components that are on the particles layer to make sure any additional billboards or effects are disabled with the light
             mi_additionalParticleRenderers = mi_sceneLight.BlockObject.GetComponentsInChildren<MeshRenderer>(true).Where(_o => _o.gameObject.layer == LayerMask.NameToLayer("Particles"));
 
@@ -692,9 +694,12 @@ namespace pp.RaftMods.LanternShadows
 
             if (!mi_sceneLight.BlockObject) return;
 
-            if (mi_particleLOD && CLanternShadows.ExtraSettingsAPI_Settings.TurnOffParticlesOnDisable)
+            if (CLanternShadows.ExtraSettingsAPI_Settings.TurnOffParticlesOnDisable)
             {
-                mi_particleLOD.enabled = _isLightOn;
+                foreach (var lod in mi_particleLOD)
+                {
+                    lod.enabled = _isLightOn;
+                }
             }
 
             if (_isLightOn)
@@ -705,11 +710,13 @@ namespace pp.RaftMods.LanternShadows
                     main.prewarm = false; //disable fire effect pre-warm so it is smoothly enabled instead popping in
                     p.Play();
                 }
+                if (mi_soundEmitter) mi_soundEmitter.Play();
                 foreach (var renderer in mi_additionalParticleRenderers) renderer.enabled = true;
             }
             else if(CLanternShadows.ExtraSettingsAPI_Settings.TurnOffParticlesOnDisable)
             {
                 foreach (var p in mi_lanternParticles) p.Stop();
+                if (mi_soundEmitter) mi_soundEmitter.Stop();
                 foreach (var renderer in mi_additionalParticleRenderers) renderer.enabled = false;
             }
 
