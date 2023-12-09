@@ -1,5 +1,6 @@
 ﻿using FMODUnity;
 using HarmonyLib;
+using HMLLibrary;
 using Newtonsoft.Json;
 using Steamworks;
 using System.Collections.Generic;
@@ -22,7 +23,7 @@ namespace pp.RaftMods.LanternShadows
     {
         private static CLanternShadows Get = null;
 
-        public const string VERSION     = "1.2.5";
+        public const string VERSION     = "1.3.0";
         public const string APP_NAME    = "LanternShadows";
         public const string APP_IDENT   = "pp.RaftMods." + APP_NAME;
 
@@ -35,7 +36,7 @@ namespace pp.RaftMods.LanternShadows
         private string ModConfigFilePath    => Path.Combine(ModDataDirectory, "config.json");
         private string ModDataFilePath      => Path.Combine(ModDataDirectory, "lightdata.json");
 
-        private LightShadows LightShadowType => mi_settings.Current.graphics.shadowType == ShadowQuality.All ? LightShadows.Soft :
+        public LightShadows LightShadowType => mi_settings.Current.graphics.shadowType == ShadowQuality.All ? LightShadows.Soft :
                                                     mi_settings.Current.graphics.shadowType == ShadowQuality.HardOnly ? LightShadows.Hard :
                                                         LightShadows.None;
 
@@ -45,6 +46,7 @@ namespace pp.RaftMods.LanternShadows
         private Settings mi_settings;
 
         private Harmony mi_harmony;
+
 
         /// <summary>
         /// Called when the mod is loaded.
@@ -200,8 +202,8 @@ namespace pp.RaftMods.LanternShadows
                 SavedLightData.Add(
                     SaveAndLoad.CurrentGameFileName, 
                     mi_sceneLights
-                        .Where(_o => _o.LightSwitch.UserControlsState)
-                        .Select(_o => new CLightData(SaveAndLoad.CurrentGameFileName, _o.LightSwitch.ObjectIndex, _o.LightSwitch.IsOn))
+                        .Where(_o => _o.LightSwitch.UserControlsState || _o.LightSwitch.ShadowsDisabled)
+                        .Select(_o => new CLightData(SaveAndLoad.CurrentGameFileName, _o.LightSwitch.ObjectIndex, _o.LightSwitch.IsOn, _o.LightSwitch.ShadowsDisabled, _o.LightSwitch.UserControlsState))
                         .ToArray());
 
                 File.WriteAllText(
@@ -250,7 +252,8 @@ namespace pp.RaftMods.LanternShadows
             }
 
             var block = _blockObject.GetComponent<Block>();
-            if (!block) return;
+            if (!block) 
+                return;
             
             var sceneLight = new SSceneLight();
 
@@ -260,13 +263,10 @@ namespace pp.RaftMods.LanternShadows
             if (ExtraSettingsAPI_Settings.EnableLightToggle)
             {
                 var col = _blockObject.GetComponentInChildren<Collider>();
-                if (!col) return;
+                if (!col) 
+                    return;
 
-                var raycastable = col.gameObject.GetComponent<RaycastInteractable>();
-                if (!raycastable)
-                {
-                    raycastable = col.gameObject.AddComponent<RaycastInteractable>();
-                }
+                var raycastable = col.gameObject.SafeAddComponent<RaycastInteractable>();
 
                 sceneLight.Raycastable = raycastable;
 
@@ -276,20 +276,19 @@ namespace pp.RaftMods.LanternShadows
                     col.gameObject.layer    = LayerMask.NameToLayer("Block");
                 }
 
-                sceneLight.LightSwitch = col.gameObject.AddComponent<CLanternSwitch>();
+                sceneLight.LightSwitch = col.gameObject.SafeAddComponent<CLanternSwitch>();
             }
             else
             {
-                sceneLight.LightSwitch = _light.gameObject.AddComponent<CLanternSwitch>();
-            }
+                sceneLight.LightSwitch = _light.gameObject.SafeAddComponent<CLanternSwitch>();
+			}
 
-            if (sceneLight.LightSwitch)
-            {
-                sceneLight.BlockObject.networkedIDBehaviour = sceneLight.LightSwitch;
-                sceneLight.LightSwitch.Load(this, sceneLight);
-            }
+            if (!sceneLight.LightSwitch)
+                throw new System.Exception("Failed to attach switch to light");
 
-            _light.shadows = ExtraSettingsAPI_Settings.EnableShadows ? LightShadowType : LightShadows.None;
+			sceneLight.BlockObject.networkedIDBehaviour = sceneLight.LightSwitch;
+			sceneLight.LightSwitch.Load(this, sceneLight);
+
             if (!mi_sceneLights.Any(_o => _o.LightComponent == _light))
             {
                 mi_sceneLights.Add(sceneLight);
@@ -303,7 +302,7 @@ namespace pp.RaftMods.LanternShadows
             {
                 foreach (var light in mi_sceneLights)
                 {
-                    light.LightComponent.shadows = ExtraSettingsAPI_Settings.EnableShadows ? LightShadowType : LightShadows.None;
+                    light.LightComponent.shadows = ExtraSettingsAPI_Settings.EnableShadows && !light.LightSwitch.ShadowsDisabled ? LightShadowType : LightShadows.None;
                 }
             }
         }
@@ -369,9 +368,9 @@ namespace pp.RaftMods.LanternShadows
         /// <param name="_lightSource"></param>
         internal void RestoreLightSource(SSceneLight _lightSource)
         {
-            if (_lightSource.LightComponent) _lightSource.LightComponent.shadows = LightShadows.None;
             if (_lightSource.LightSwitch)
             {
+                _lightSource.LightSwitch.SetShadowsOn(false);
                 _lightSource.LightSwitch.SetLightOn(true);
             }
             if (_lightSource.PreModColliderLayer != 0)
@@ -397,12 +396,18 @@ namespace pp.RaftMods.LanternShadows
             }
         }
 
-        #region PATCHES
-        /// <summary>
-        /// Called whenever a new block is spawned by the local player or network players.
-        /// This patch intercepts this and instead forwards this to mod which checks the block if its a light and handles light registration. The default behaviour is overwritten.
-        /// </summary>
-        [HarmonyPatch(typeof(BlockCreator), "CreateBlock")]
+        internal bool IsAutomaticLightControlsKeyPressed()
+            => Input.GetKeyDown(ExtraSettingsAPI_Settings.EnableAutomaticLightControlsKey) || Input.GetKeyDown(ExtraSettingsAPI_Settings.EnableAutomaticLightControlsAltKey);
+
+		internal bool IsToggleShadowsKeyPressed()
+			=> Input.GetKeyDown(ExtraSettingsAPI_Settings.ToggleShadowsKey) || Input.GetKeyDown(ExtraSettingsAPI_Settings.ToggleShadowsKeyAlt);
+
+		#region PATCHES
+		/// <summary>
+		/// Called whenever a new block is spawned by the local player or network players.
+		/// This patch intercepts this and instead forwards this to mod which checks the block if its a light and handles light registration. The default behaviour is overwritten.
+		/// </summary>
+		[HarmonyPatch(typeof(BlockCreator), "CreateBlock")]
         public class CHarmonyPatch_BlockCreator_CreateBlock
         {
             //Intercept create block method so we can check each created block if it is a light
@@ -461,7 +466,7 @@ namespace pp.RaftMods.LanternShadows
         }
 
         /// <summary>
-        /// Overwrites vanilla light control. This is now handled by <see cref="CLanternSwitch.CheckLightState(bool)"/>.
+        /// Overwrites vanilla light control. This is now handled by <see cref="CLanternSwitch.CheckLightStateSwitch(bool)"/>.
         /// </summary>
         [HarmonyPatch(typeof(NightLightController), "Update")]
         public class CHarmonyPatch_NightLightController_Update
@@ -493,7 +498,7 @@ namespace pp.RaftMods.LanternShadows
     /// 
     /// This class also handles controlling light sources, particle effects and studio event emitters (audio sources) if lanterns are switched on and off.
     /// It does a custom overwrite of the day/night-cycle control which is handled by <see cref="NightLightController"/> in vanilla raft, 
-    /// this method is completely ignored by <see cref="CHarmonyPatch_NightLightController_Update"/> and implemented below as <see cref="CheckLightState(bool)"/> called from the switches update method.
+    /// this method is completely ignored by <see cref="CHarmonyPatch_NightLightController_Update"/> and implemented below as <see cref="CheckLightStateSwitch(bool)"/> called from the switches update method.
     /// 
     /// It implements <see cref="IRaycastable"/> which, if being found next to a collider, is getting called by the raft game system once the lantern is looked at.
     /// </summary>
@@ -504,6 +509,12 @@ namespace pp.RaftMods.LanternShadows
         /// True if the light source is currently switched on
         /// </summary>
         public bool IsOn { get; private set; }
+
+        /// <summary>
+        /// True if light shadows have been manually disabled
+        /// </summary>
+        public bool ShadowsDisabled { get; private set; }
+
         /// <summary>
         /// User currently controls this light source's state. Automatic day/night switch wont affect this source.
         /// </summary>
@@ -527,12 +538,15 @@ namespace pp.RaftMods.LanternShadows
         
         private bool mi_loaded = false;
 
-        /// <summary>
-        /// Initializes the lantern switch behaviour providing a mod handle and a scene light wrapper.
-        /// </summary>
-        /// <param name="_mod">A handle to the mod object initializing this switch.</param>
-        /// <param name="_light">Contains references to the block and other components.</param>
-        public void Load(CLanternShadows _mod, SSceneLight _light)
+		private float mi_nightTimeStart;
+		private float mi_nightTimeEnd;
+
+		/// <summary>
+		/// Initializes the lantern switch behaviour providing a mod handle and a scene light wrapper.
+		/// </summary>
+		/// <param name="_mod">A handle to the mod object initializing this switch.</param>
+		/// <param name="_light">Contains references to the block and other components.</param>
+		public void Load(CLanternShadows _mod, SSceneLight _light)
         {
             mi_mod                      = _mod;
             mi_sceneLight               = _light;
@@ -546,14 +560,19 @@ namespace pp.RaftMods.LanternShadows
             //get any additional meshrenderer components that are on the particles layer to make sure any additional billboards or effects are disabled with the light
             mi_additionalParticleRenderers = mi_sceneLight.BlockObject.GetComponentsInChildren<MeshRenderer>(true).Where(_o => _o.gameObject.layer == LayerMask.NameToLayer("Particles"));
 
-            //use our block objects index so we receive RPC calls
-            //need to use an existing block-index as clients/host need to be aware of it
-            ObjectIndex = mi_sceneLight.BlockObject.ObjectIndex;
+            mi_nightTimeStart = Traverse.Create(mi_nlCntrl).Field("nightTimeStart").GetValue<float>();
+			mi_nightTimeEnd = Traverse.Create(mi_nlCntrl).Field("nightTimeEnd").GetValue<float>();
+
+			//use our block objects index so we receive RPC calls
+			//need to use an existing block-index as clients/host need to be aware of it
+			ObjectIndex = mi_sceneLight.BlockObject.ObjectIndex;
             NetworkIDManager.AddNetworkID(this);
 
-            CheckLightState(true);
+            CheckLightStateSwitch(true);
 
-            mi_loaded = true;
+            SetShadowsOn(!ShadowsDisabled);
+
+			mi_loaded = true;
 
             if (!Raft_Network.IsHost) //request lantern states from host after load
             {
@@ -574,34 +593,37 @@ namespace pp.RaftMods.LanternShadows
                 var data = mi_mod.SavedLightData[SaveAndLoad.CurrentGameFileName].FirstOrDefault(_o => _o.ObjectID == ObjectIndex);
                 if (data != null)
                 {
-                    UserControlsState = true;
+                    UserControlsState = data.UserControlsChange;
+                    ShadowsDisabled = data.ShadowsDisabled;
                     SetLightOn(data.IsOn);
+                    SetShadowsOn(!data.ShadowsDisabled);
                 }
             }
         }
 
         private void Update()
         {
-            if (!mi_loaded || CLanternShadows.ExtraSettingsAPI_Settings.PreventDayNightLightSwitch) return;
+            if (!mi_loaded)
+                return;
 
-            CheckLightState(false);
+            OverrideLightIntensity();
+
+			if (CLanternShadows.ExtraSettingsAPI_Settings.PreventDayNightLightSwitch) 
+                return;
+
+			CheckLightStateSwitch(false);
         }
 
-        private void CheckLightState(bool _forceSet)
+        private void CheckLightStateSwitch(bool _forceSet)
         {
             if (mi_azureCntrl == null)
             {
                 mi_azureCntrl = ComponentManager<AzureSkyController>.Value;
             }
 
-            var isNight =   mi_azureCntrl.timeOfDay.hour > Traverse.Create(mi_nlCntrl).Field("nightTimeStart").GetValue<float>() ||
-                            mi_azureCntrl.timeOfDay.hour < Traverse.Create(mi_nlCntrl).Field("nightTimeEnd").GetValue<float>();
+            var isNight =   mi_azureCntrl.timeOfDay.hour > mi_nightTimeStart ||
+                            mi_azureCntrl.timeOfDay.hour < mi_nightTimeEnd;
 
-
-            if (mi_setLightIntensityInfo != null && mi_nlCntrl != null)
-            {
-                mi_setLightIntensityInfo.Invoke(mi_nlCntrl, new object[] { IsOn ? 1f : 0f });
-            }
             if ((mi_isNight != isNight || _forceSet) && !UserControlsState)
             {
                 mi_isNight = isNight;
@@ -625,51 +647,8 @@ namespace pp.RaftMods.LanternShadows
                 Helper.LocalPlayerIsWithinDistance(transform.position, Player.UseDistance + 0.5f))
             {
                 mi_canvas.displayTextManager.ShowText(IsOn ? "Extinguish" : "Light", MyInput.Keybinds["Interact"].MainKey, 0, 0, true);
-                if (MyInput.GetButtonDown("Interact"))
-                {
-                    UserControlsState = true;
-                    SetLightOn(!IsOn);
-
-                    var netMsg = new Message_Battery_OnOff(
-                        Messages.Battery_OnOff,
-                        RAPI.GetLocalPlayer().Network.NetworkIDManager,
-                        RAPI.GetLocalPlayer().steamID,
-                        ObjectIndex,
-                        (int)ELanternRequestType.TOGGLE,
-                        IsOn);
-
-                    if (Raft_Network.IsHost)
-                    {
-                        mi_network.RPC(netMsg, Target.Other, EP2PSend.k_EP2PSendReliable, NetworkChannel.Channel_Game);
-                        return;
-                    }
-                    mi_network.SendP2P(mi_network.HostID, netMsg, EP2PSend.k_EP2PSendReliable, NetworkChannel.Channel_Game);
-                    return;
-                }
-                if (UserControlsState && Input.GetKeyDown(KeyCode.F))
-                {
-                    var notifier = ComponentManager<HNotify>.Value;
-                    var notification = notifier.AddNotification(HNotify.NotificationType.normal, "Automatic light behaviour restored.", 5);
-                    notification.Show();
-                    UserControlsState = false;
-                    CheckLightState(true);
-
-                    var netMsg = new Message_Battery_OnOff(
-                        Messages.Battery_OnOff,
-                        RAPI.GetLocalPlayer().Network.NetworkIDManager,
-                        RAPI.GetLocalPlayer().steamID,
-                        ObjectIndex,
-                        (int)ELanternRequestType.RELEASE_AUTO, //indicate to receiving side that we want to switch back to auto control
-                        IsOn);
-
-                    if (Raft_Network.IsHost)
-                    {
-                        mi_network.RPC(netMsg, Target.Other, EP2PSend.k_EP2PSendReliable, NetworkChannel.Channel_Game);
-                        return;
-                    }
-                    mi_network.SendP2P(mi_network.HostID, netMsg, EP2PSend.k_EP2PSendReliable, NetworkChannel.Channel_Game);
-                }
-            }
+                HandlePlayerLightInteraction();
+			}
             else
             {
                 mi_canvas.displayTextManager.HideDisplayTexts();
@@ -692,7 +671,8 @@ namespace pp.RaftMods.LanternShadows
         {
             IsOn = _isLightOn;
 
-            if (!mi_sceneLight.BlockObject) return;
+            if (!mi_sceneLight.BlockObject) 
+                return;
 
             if (CLanternShadows.ExtraSettingsAPI_Settings.TurnOffParticlesOnDisable)
             {
@@ -704,45 +684,47 @@ namespace pp.RaftMods.LanternShadows
 
             if (_isLightOn)
             {
-                foreach (var p in mi_lanternParticles)
-                {
-                    var main = p.main;
-                    main.prewarm = false; //disable fire effect pre-warm so it is smoothly enabled instead popping in
-                    p.Play();
-                }
-                if (mi_soundEmitter) mi_soundEmitter.Play();
-                foreach (var renderer in mi_additionalParticleRenderers) renderer.enabled = true;
+                EnableParticlesAndSound();
             }
             else if(CLanternShadows.ExtraSettingsAPI_Settings.TurnOffParticlesOnDisable)
             {
-                foreach (var p in mi_lanternParticles) p.Stop();
-                if (mi_soundEmitter) mi_soundEmitter.Stop();
-                foreach (var renderer in mi_additionalParticleRenderers) renderer.enabled = false;
+                DisableParticlesAndSound();
             }
 
-            mi_sceneLight.LightComponent.enabled = _isLightOn;
+			mi_sceneLight.LightComponent.enabled = _isLightOn;
         }
 
-        public override bool Deserialize(Message_NetworkBehaviour _msg, CSteamID _remoteID)
+        public void SetShadowsOn(bool _areShadowsOn)
         {
-            if (!mi_loaded) return base.Deserialize(_msg, _remoteID);
+            if (!mi_sceneLight.LightComponent)
+                return;
+			mi_sceneLight.LightComponent.shadows = CLanternShadows.ExtraSettingsAPI_Settings.EnableShadows && _areShadowsOn ? mi_mod.LightShadowType : LightShadows.None;
+		}
+
+		public override bool Deserialize(Message_NetworkBehaviour _msg, CSteamID _remoteID)
+        {
+            if (!mi_loaded) 
+                return base.Deserialize(_msg, _remoteID);
 
             Messages type = _msg.Type;
-            if (_msg.Type != Messages.Battery_OnOff) return base.Deserialize(_msg, _remoteID);
+            if (type != Messages.Battery_OnOff) 
+                return base.Deserialize(_msg, _remoteID);
 
             Message_Battery_OnOff msg = _msg as Message_Battery_OnOff;
-            if (msg == null) return base.Deserialize(_msg, _remoteID);
+            if (msg == null) 
+                return base.Deserialize(_msg, _remoteID);
 
             switch((ELanternRequestType)msg.batteryUsesLeft) //we use the uses left value as our command type carrier
             {
                 case ELanternRequestType.RELEASE_AUTO:
                     UserControlsState = false;
-                    CheckLightState(true);
+                    CheckLightStateSwitch(true);
                     return true;
                 case ELanternRequestType.REQUEST_STATE:  //a client block requested this blocks state, send it back
                     if (Raft_Network.IsHost)
                     {
-                        if (!UserControlsState) return true;
+                        if (!UserControlsState) 
+                            return true;
 
                         mi_network.SendP2P(
                             _remoteID,
@@ -765,7 +747,115 @@ namespace pp.RaftMods.LanternShadows
             NetworkIDManager.RemoveNetworkID(this);
             mi_mod.UnregisterLightSource(mi_sceneLight);
         }
-    }
+    
+        private void HandlePlayerLightInteraction()
+        {
+			if (MyInput.GetButtonDown("Interact"))
+			{
+				ToggleLightState();
+			}
+            else if (mi_mod.IsToggleShadowsKeyPressed())
+            {
+                if (!CLanternShadows.ExtraSettingsAPI_Settings.EnableShadows)
+                {
+                    CUtil.LogW("Will not toggle light shadow state as shadows are disabled in the mod settings.");
+                    CUtil.ShowNotification("Shadows are disabled in the mod settings!");
+                    return;
+                }
+                ToggleLightShadows();
+            }
+			else if (UserControlsState && mi_mod.IsAutomaticLightControlsKeyPressed())
+			{
+                if (CLanternShadows.ExtraSettingsAPI_Settings.PreventDayNightLightSwitch)
+                {
+					CUtil.LogW("Will resume automatic light controls as the feature is disabled in the mod settings.");
+					CUtil.ShowNotification("Automatic light controls are disabled in the mod settings!");
+					return;
+				}
+
+				ReEnableAutoLightControl();
+			}
+		}
+
+        private void OverrideLightIntensity()
+        {
+			if (mi_setLightIntensityInfo != null && mi_nlCntrl != null)
+			{
+				mi_setLightIntensityInfo.Invoke(mi_nlCntrl, new object[] { IsOn ? 1f : 0f });
+			}
+		}
+
+		private void DisableParticlesAndSound()
+        {
+			foreach (var p in mi_lanternParticles)
+				p.Stop();
+
+			if (mi_soundEmitter)
+				mi_soundEmitter.Stop();
+
+			foreach (var renderer in mi_additionalParticleRenderers)
+				renderer.enabled = false;
+		}
+
+        private void EnableParticlesAndSound()
+        {
+			foreach (var p in mi_lanternParticles)
+			{
+				var main = p.main;
+				main.prewarm = false; //disable fire effect pre-warm so it is smoothly enabled instead popping in
+				p.Play();
+			}
+
+			if (mi_soundEmitter)
+				mi_soundEmitter.Play();
+
+			foreach (var renderer in mi_additionalParticleRenderers)
+				renderer.enabled = true;
+		}
+
+        private void ToggleLightState()
+		{
+			UserControlsState = true;
+			SetLightOn(!IsOn);
+			NotifyNetworkPeers(ELanternRequestType.TOGGLE);
+		}
+
+		private void ReEnableAutoLightControl()
+		{
+			UserControlsState = false;
+			CheckLightStateSwitch(true);
+			NotifyNetworkPeers(ELanternRequestType.RELEASE_AUTO);
+			CUtil.ShowNotification("Automatic light behaviour restored.");
+		}
+
+		private void ToggleLightShadows()
+        {
+            if (!mi_sceneLight.LightComponent)
+                return;
+
+			ShadowsDisabled = !ShadowsDisabled;
+			SetShadowsOn(!ShadowsDisabled);
+			CUtil.ShowNotification($"Shadows have been {(ShadowsDisabled ? "disabled" : "enabled")}.");
+        }
+
+		private void NotifyNetworkPeers(ELanternRequestType requestType)
+		{
+			var netMsg = new Message_Battery_OnOff(
+							Messages.Battery_OnOff,
+							RAPI.GetLocalPlayer().Network.NetworkIDManager,
+							RAPI.GetLocalPlayer().steamID,
+							ObjectIndex,
+							(int)requestType,
+							IsOn);
+
+			if (Raft_Network.IsHost)
+			{
+				mi_network.RPC(netMsg, Target.Other, EP2PSend.k_EP2PSendReliable, NetworkChannel.Channel_Game);
+				return;
+			}
+			mi_network.SendP2P(mi_network.HostID, netMsg, EP2PSend.k_EP2PSendReliable, NetworkChannel.Channel_Game);
+		}
+	}
 
     /// <summary>
     /// Wrapper class is used to manage scene lights and their connected components as well as storing meta info about each light.
@@ -803,33 +893,65 @@ namespace pp.RaftMods.LanternShadows
         /// Enable real-time shadows on light sources.
         /// </summary>
         public bool EnableShadows               ;
+        /// <summary>
+        /// Keybind for re-enabling automatic light controls.
+        /// </summary>
+        public KeyCode EnableAutomaticLightControlsKey;
+		/// <summary>
+		/// Alternative keybind for re-enabling automatic light controls.
+		/// </summary>
+		public KeyCode EnableAutomaticLightControlsAltKey;
+		/// <summary>
+		/// Keybind for re-enabling automatic light controls.
+		/// </summary>
+		public KeyCode ToggleShadowsKey;
+		/// <summary>
+		/// Alternative keybind for re-enabling automatic light controls.
+		/// </summary>
+		public KeyCode ToggleShadowsKeyAlt;
 
-        public CModConfig()
+		public CModConfig()
         {
-            PreventDayNightLightSwitch  = false;
-            EnableLightToggle           = true;
-            TurnOffParticlesOnDisable   = true;
-            EnableShadows               = true;
-        }
+            PreventDayNightLightSwitch          = false;
+            EnableLightToggle                   = true;
+            TurnOffParticlesOnDisable           = true;
+            EnableShadows                       = true;
+            EnableAutomaticLightControlsKey     = KeyCode.F;
+			EnableAutomaticLightControlsAltKey  = KeyCode.None;
+			ToggleShadowsKey                    = KeyCode.None;
+			ToggleShadowsKeyAlt                 = KeyCode.None;
+		}
 
-        public static bool ExtraSettingsAPI_GetCheckboxState(string _settingName) => true;
+        public static bool ExtraSettingsAPI_GetCheckboxState(string _settingName) 
+            => true;
 
-        public static bool ExtraSettingsAPI_Loaded = false;
+		public static KeyCode ExtraSettingsAPI_GetKeybindMain(string _settingName)
+		   => KeyCode.None;
+		
+        public static KeyCode ExtraSettingsAPI_GetKeybindAlt(string _settingName)
+		   => KeyCode.None;
+
+		public static bool ExtraSettingsAPI_Loaded = false;
 
         public void ExtraSettingsAPI_Load() 
-        {
-            ReloadSettings();
-        }
+            => ReloadSettings();
 
-        public void ExtraSettingsAPI_SettingsClose() => ReloadSettings();
+        public void ExtraSettingsAPI_SettingsClose() 
+            => ReloadSettings();
 
         private void ReloadSettings()
         {
-            PreventDayNightLightSwitch  = ExtraSettingsAPI_GetCheckboxState("PreventDayNightLightSwitch");
-            EnableLightToggle           = ExtraSettingsAPI_GetCheckboxState("EnableLightToggle");
-            TurnOffParticlesOnDisable   = ExtraSettingsAPI_GetCheckboxState("TurnOffParticlesOnDisable");
-            EnableShadows               = ExtraSettingsAPI_GetCheckboxState("EnableShadows");
-        }
+            PreventDayNightLightSwitch          = ExtraSettingsAPI_GetCheckboxState("PreventDayNightLightSwitch");
+            EnableLightToggle                   = ExtraSettingsAPI_GetCheckboxState("EnableLightToggle");
+            TurnOffParticlesOnDisable           = ExtraSettingsAPI_GetCheckboxState("TurnOffParticlesOnDisable");
+            EnableShadows                       = ExtraSettingsAPI_GetCheckboxState("EnableShadows");
+
+            EnableAutomaticLightControlsKey     = ExtraSettingsAPI_GetKeybindMain("EnableAutomaticLightControlsKey");
+			EnableAutomaticLightControlsAltKey  = ExtraSettingsAPI_GetKeybindAlt("EnableAutomaticLightControlsKey");
+
+			ToggleShadowsKey                   = ExtraSettingsAPI_GetKeybindMain("ToggleShadowsKey");
+			ToggleShadowsKeyAlt                = ExtraSettingsAPI_GetKeybindAlt("ToggleShadowsKey");
+		}
     }
 
     [System.Serializable]
@@ -838,12 +960,16 @@ namespace pp.RaftMods.LanternShadows
         public string SaveName;
         public ulong ObjectID;
         public bool IsOn;
+        public bool ShadowsDisabled;
+        public bool UserControlsChange;
 
-        public CLightData(string _saveName, ulong _objectID, bool _isOn)
+        public CLightData(string _saveName, ulong _objectID, bool _isOn, bool _shadowsDisabled, bool _userControlsChange)
         {
-            SaveName    = _saveName;
-            ObjectID    = _objectID;
-            IsOn        = _isOn;
+            SaveName        = _saveName;
+            ObjectID        = _objectID;
+            IsOn            = _isOn;
+            ShadowsDisabled = _shadowsDisabled;
+            UserControlsChange = _userControlsChange;
         }
     }
 
@@ -856,7 +982,24 @@ namespace pp.RaftMods.LanternShadows
 
     public static class CUtil //util
     {
-        public static void Log(object _message)
+        public static void ShowNotification(string message)
+        {
+			var notifier = ComponentManager<HNotify>.Value;
+			var notification = notifier.AddNotification(HNotify.NotificationType.normal, message, 5);
+			notification.Show();
+		}
+		
+		public static T SafeAddComponent<T>(this GameObject _gameObject) where T : Component
+		{
+			var comp = _gameObject.GetComponent<T>();
+			if (!comp)
+			{
+				comp = _gameObject.AddComponent<T>();
+			}
+			return comp;
+		}
+
+		public static void Log(object _message)
         {
             Debug.Log($"[{CLanternShadows.APP_NAME}] {_message}");
         }

@@ -2,11 +2,11 @@
   "name": "Lantern Shadows",
   "author": "Pete",
   "description": "Enables realtime shadows on lanterns and allows them to be switched on/off individually. Be careful as shadows may have a big impact on performance.",
-  "version": "1.2.5",
+  "version": "1.3.0",
   "license": "MIT",
   "icon": "icon.png",
   "banner": "banner.jpg",
-  "gameVersion": "1.08",
+  "gameVersion": "1.09",
   "updateUrl": "https://www.raftmodding.com/api/v1/mods/lantern-shadows/version.txt",
   "isModPermanent": false,
   "excludedFiles": [],
@@ -36,6 +36,19 @@
       "text": "Enable shadows",
       "access": "mainmenu",
       "default": true
+    },
+    {
+      "type": "keybind",
+      "name": "EnableAutomaticLightControlsKey",
+      "text": "Enable auto lights",
+      "access": "both",
+      "mainDefault": "f"
+    },
+    {
+      "type": "keybind",
+      "name": "ToggleShadowsKey",
+      "text": "Toggle shadows key",
+      "access": "both"
     }
   ]
 }
