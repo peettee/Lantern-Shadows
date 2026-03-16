@@ -701,7 +701,7 @@ namespace pp.RaftMods.LanternShadows
 			mi_sceneLight.LightComponent.shadows = CLanternShadows.ExtraSettingsAPI_Settings.EnableShadows && _areShadowsOn ? mi_mod.LightShadowType : LightShadows.None;
 		}
 
-		public override bool Deserialize(Message_NetworkBehaviour _msg, CSteamID _remoteID)
+		public override bool Deserialize(Message_NetworkBehaviour _msg, Network_UserId _remoteID)
         {
             if (!mi_loaded) 
                 return base.Deserialize(_msg, _remoteID);
@@ -741,7 +741,7 @@ namespace pp.RaftMods.LanternShadows
             return true;
         }
 
-        protected override void OnDestroy()
+        public override void OnDestroy()
         {
             base.OnDestroy();
             NetworkIDManager.RemoveNetworkID(this);
