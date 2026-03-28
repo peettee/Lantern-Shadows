@@ -23,7 +23,7 @@ namespace pp.RaftMods.LanternShadows
     {
         private static CLanternShadows Get = null;
 
-        public const string VERSION     = "1.3.0";
+        public const string VERSION     = "1.3.1";
         public const string APP_NAME    = "LanternShadows";
         public const string APP_IDENT   = "pp.RaftMods." + APP_NAME;
 
