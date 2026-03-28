@@ -50,17 +50,18 @@
     <None Include="modinfo.json" />
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="Assembly-CSharp-firstpass.dll">
-      <HintPath>G:\Steam\steamapps\common\Raft\Raft_Data/Managed\Assembly-CSharp-firstpass.dll</HintPath>
-    </Reference>
-    <Reference Include="Assembly-CSharp.dll">
-      <HintPath>G:\Steam\steamapps\common\Raft\Raft_Data/Managed\Assembly-CSharp.dll</HintPath>
+    <Reference Include="Assembly-CSharp, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>G:\Steam\steamapps\common\Raft\Raft_Data\Managed\Assembly-CSharp.dll</HintPath>
     </Reference>
     <Reference Include="Autodesk.Fbx.dll">
       <HintPath>G:\Steam\steamapps\common\Raft\Raft_Data/Managed\Autodesk.Fbx.dll</HintPath>
     </Reference>
-    <Reference Include="com.unity.multiplayer-hlapi.Runtime.dll">
-      <HintPath>G:\Steam\steamapps\common\Raft\Raft_Data/Managed\com.unity.multiplayer-hlapi.Runtime.dll</HintPath>
+    <Reference Include="com.rlabrecque.steamworks.net">
+      <HintPath>G:\Steam\steamapps\common\Raft\Raft_Data\Managed\com.rlabrecque.steamworks.net.dll</HintPath>
+    </Reference>
+    <Reference Include="FMODUnity">
+      <HintPath>G:\Steam\steamapps\common\Raft\Raft_Data\Managed\FMODUnity.dll</HintPath>
     </Reference>
     <Reference Include="MeshExtension.dll">
       <HintPath>G:\Steam\steamapps\common\Raft\Raft_Data/Managed\MeshExtension.dll</HintPath>
