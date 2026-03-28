@@ -42,7 +42,7 @@ namespace pp.RaftMods.LanternShadows
 
         public Dictionary<string, CLightData[]> SavedLightData { get; private set; } = new Dictionary<string, CLightData[]>();
 
-        private List<SSceneLight> mi_sceneLights;
+        private Dictionary<uint, SSceneLight> mi_sceneLights;
         private Settings mi_settings;
 
         private Harmony mi_harmony;
@@ -95,7 +95,7 @@ namespace pp.RaftMods.LanternShadows
             //undo all changes to the scene
             if (mi_sceneLights != null)
             {
-                foreach (var light in mi_sceneLights)
+                foreach ((uint _, SSceneLight light) in mi_sceneLights)
                 {
                     RestoreLightSource(light);
                     if (light.LightSwitch)
@@ -202,8 +202,9 @@ namespace pp.RaftMods.LanternShadows
                 SavedLightData.Add(
                     SaveAndLoad.CurrentGameFileName, 
                     mi_sceneLights
-                        .Where(_o => _o.LightSwitch.UserControlsState || _o.LightSwitch.ShadowsDisabled)
-                        .Select(_o => new CLightData(SaveAndLoad.CurrentGameFileName, _o.LightSwitch.ObjectIndex, _o.LightSwitch.IsOn, _o.LightSwitch.ShadowsDisabled, _o.LightSwitch.UserControlsState))
+                        .Select(o => o.Value.LightSwitch)
+                        .Where(_o => _o.UserControlsState || _o.ShadowsDisabled)
+                        .Select(_o => new CLightData(SaveAndLoad.CurrentGameFileName, _o.ObjectIndex, _o.IsOn, _o.ShadowsDisabled, _o.UserControlsState))
                         .ToArray());
 
                 File.WriteAllText(
@@ -225,7 +226,7 @@ namespace pp.RaftMods.LanternShadows
         //used for post-loading light sources into mod control. only used if mod is reloaded.
         private void LoadLights()
         {
-            mi_sceneLights = new List<SSceneLight>();
+            mi_sceneLights = new Dictionary<uint, SSceneLight>();
 
             var raftLights      = GameObject.FindObjectsOfType<LightSingularity>();
             var otherLights     = GameObject.FindObjectsOfType<Light>()
@@ -248,7 +249,7 @@ namespace pp.RaftMods.LanternShadows
 
             if (mi_sceneLights == null)
             {
-                mi_sceneLights = new List<SSceneLight>();
+                mi_sceneLights = new Dictionary<uint, SSceneLight>();
             }
 
             var block = _blockObject.GetComponent<Block>();
@@ -289,9 +290,9 @@ namespace pp.RaftMods.LanternShadows
 			sceneLight.BlockObject.networkedIDBehaviour = sceneLight.LightSwitch;
 			sceneLight.LightSwitch.Load(this, sceneLight);
 
-            if (!mi_sceneLights.Any(_o => _o.LightComponent == _light))
+            if (!mi_sceneLights.Values.Any(_o => _o.LightComponent == _light))
             {
-                mi_sceneLights.Add(sceneLight);
+                mi_sceneLights.Add(block.ObjectIndex, sceneLight);
             }
         }
        
@@ -300,7 +301,7 @@ namespace pp.RaftMods.LanternShadows
         {
             if (RAPI.IsCurrentSceneGame() && mi_sceneLights != null)
             {
-                foreach (var light in mi_sceneLights)
+                foreach ((uint _, SSceneLight light) in mi_sceneLights)
                 {
                     light.LightComponent.shadows = ExtraSettingsAPI_Settings.EnableShadows && !light.LightSwitch.ShadowsDisabled ? LightShadowType : LightShadows.None;
                 }
@@ -320,7 +321,7 @@ namespace pp.RaftMods.LanternShadows
 
             if (mi_sceneLights == null)
             {
-                mi_sceneLights = new List<SSceneLight>();
+                mi_sceneLights = new Dictionary<uint, SSceneLight>();
             }
 
             //check if a raft light controller is available (built-in torch)
@@ -390,10 +391,10 @@ namespace pp.RaftMods.LanternShadows
         {
             if (Get == null) return; //mod is being unloaded
 
-            if (mi_sceneLights?.Contains(_lightSource) ?? false)
-            {
-                mi_sceneLights.Remove(_lightSource);
-            }
+            if (_lightSource.BlockObject == null)
+                return;
+
+            mi_sceneLights.Remove(_lightSource.BlockObject.ObjectIndex);
         }
 
         internal bool IsAutomaticLightControlsKeyPressed()
