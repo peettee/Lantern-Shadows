@@ -47,7 +47,6 @@ namespace pp.RaftMods.LanternShadows
 
         private Harmony mi_harmony;
 
-
         /// <summary>
         /// Called when the mod is loaded.
         /// </summary>
@@ -124,7 +123,7 @@ namespace pp.RaftMods.LanternShadows
                     SaveConfig();
                     return;
                 }
-
+                
                 ExtraSettingsAPI_Settings = JsonConvert.DeserializeObject<CModConfig>(File.ReadAllText(ModConfigFilePath)) ?? throw new System.Exception("De-serialisation failed.");
             }
             catch (System.Exception _e)
@@ -142,7 +141,7 @@ namespace pp.RaftMods.LanternShadows
                     Directory.CreateDirectory(ModDataDirectory);
                 }
 
-                if(ExtraSettingsAPI_Settings == null)
+                if (ExtraSettingsAPI_Settings == null)
                 {
                     ExtraSettingsAPI_Settings = new CModConfig();
                 }
@@ -188,7 +187,6 @@ namespace pp.RaftMods.LanternShadows
 
             try
             {
-
                 if (File.Exists(ModDataFilePath))
                 {
                     File.Delete(ModDataFilePath);
@@ -742,7 +740,7 @@ namespace pp.RaftMods.LanternShadows
             return true;
         }
 
-        protected override void OnDestroy()
+        public override void OnDestroy()
         {
             base.OnDestroy();
             NetworkIDManager.RemoveNetworkID(this);
@@ -791,10 +789,10 @@ namespace pp.RaftMods.LanternShadows
 			foreach (var p in mi_lanternParticles)
 				p.Stop();
 
-			if (mi_soundEmitter)
-				mi_soundEmitter.Stop();
+            if (mi_soundEmitter)
+                mi_soundEmitter.Stop();
 
-			foreach (var renderer in mi_additionalParticleRenderers)
+            foreach (var renderer in mi_additionalParticleRenderers)
 				renderer.enabled = false;
 		}
 
@@ -807,10 +805,10 @@ namespace pp.RaftMods.LanternShadows
 				p.Play();
 			}
 
-			if (mi_soundEmitter)
-				mi_soundEmitter.Play();
+            if (mi_soundEmitter)
+                mi_soundEmitter.Play();
 
-			foreach (var renderer in mi_additionalParticleRenderers)
+            foreach (var renderer in mi_additionalParticleRenderers)
 				renderer.enabled = true;
 		}
 
