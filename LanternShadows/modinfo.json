@@ -15,40 +15,56 @@
       "type": "checkbox",
       "name": "PreventDayNightLightSwitch",
       "text": "Prevent autom. day/night light switch",
-      "default": false
+      "default": false,
+      "tooltip": "If set to true, lanterns will no longer be switched on/off automatically during night/day."
     },
     {
       "type": "checkbox",
       "name": "EnableLightToggle",
       "text": "Enable manual light switch",
       "access": "mainmenu",
-      "default": true
+      "default": true,
+      "tooltip": "Allow lanterns to be toggled on/off with the interact key."
     },
     {
       "type": "checkbox",
       "name": "TurnOffParticlesOnDisable",
       "text": "Switch off particle effects",
-      "default": true
+      "default": true,
+      "tooltip": "Turn particles and sound effect off if the lantern is switched off."
     },
     {
       "type": "checkbox",
       "name": "EnableShadows",
       "text": "Enable shadows",
       "access": "mainmenu",
-      "default": true
+      "default": true,
+      "tooltip": [
+        "Disable shadows being cast by lanterns.",
+        "Use this if you only want to switch lanterns on/off but dont want the shadow effects."
+      ]
     },
     {
       "type": "keybind",
       "name": "EnableAutomaticLightControlsKey",
       "text": "Enable auto lights",
       "access": "both",
-      "mainDefault": "f"
+      "mainDefault": "F",
+      "tooltip": [
+        "Use this key on lantern that you switched on or off manually, to restore automatic light controls.",
+        "After restoring automatic light controls, lanterns will automatically switch on/off during night/day.",
+        "Only works if \"Prevent autom. day/night light switch\" is disabled."
+      ]
     },
     {
       "type": "keybind",
       "name": "ToggleShadowsKey",
       "text": "Toggle shadows key",
-      "access": "both"
+      "access": "both",
+      "tooltip": [
+        "Assign a key and use it on any individual lantern to switch shadows on or off for this specific lantern.",
+        "Only works if \"Enable shadows\" has been enabled."
+      ]
     }
   ]
 }
