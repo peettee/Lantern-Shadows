@@ -23,7 +23,6 @@ namespace pp.RaftMods.LanternShadows
     {
         private static CLanternShadows Get = null;
 
-        public const string VERSION     = "1.3.1";
         public const string APP_NAME    = "LanternShadows";
         public const string APP_IDENT   = "pp.RaftMods." + APP_NAME;
 
@@ -74,7 +73,7 @@ namespace pp.RaftMods.LanternShadows
 
             LoadLightData();
 
-            CUtil.Log("LanternShadows v. " + VERSION + " loaded.");
+            CUtil.Log("LanternShadows v. " + version + " loaded.");
         }
 
         public override void WorldEvent_WorldSaved()
@@ -101,7 +100,7 @@ namespace pp.RaftMods.LanternShadows
             var lsNetworkMessage = (LSNetworkMessage)message;
             if (!mi_sceneLights.TryGetValue(lsNetworkMessage.TargetObjectIndex, out SSceneLight sceneLight))
             {
-                Debug.LogW($"Received network message of type {lsNetworkMessage.Type} for unknown light block {lsNetworkMessage.TargetObjectIndex}");
+                CUtil.LogW($"Received network message of type {lsNetworkMessage.Type} for unknown light block {lsNetworkMessage.TargetObjectIndex}");
                 return base.OnNetworkMessage(message, from, modslug);
             }
             return sceneLight.LightSwitch?.OnNetworkMessage(lsNetworkMessage, from) ?? false;
