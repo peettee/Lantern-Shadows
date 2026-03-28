@@ -2,7 +2,6 @@
 using HarmonyLib;
 using HMLLibrary;
 using Newtonsoft.Json;
-using Steamworks;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -83,6 +82,29 @@ namespace pp.RaftMods.LanternShadows
             base.WorldEvent_WorldSaved();
 
             SaveLightData();
+        }
+
+        public override bool OnNetworkMessage(object message, Network_UserId from, string modslug)
+        {
+            if (!RAPI.IsCurrentSceneGame())
+                return false;
+
+            if (message == null)
+                return false;
+
+            if (!(message is LSNetworkMessage))
+            {
+                CUtil.LogW($"Unknown net message \"{message.GetType().Name}\" received");
+                return base.OnNetworkMessage(message, from, modslug);
+            }
+
+            var lsNetworkMessage = (LSNetworkMessage)message;
+            if (!mi_sceneLights.TryGetValue(lsNetworkMessage.TargetObjectIndex, out SSceneLight sceneLight))
+            {
+                Debug.LogW($"Received network message of type {lsNetworkMessage.Type} for unknown light block {lsNetworkMessage.TargetObjectIndex}");
+                return base.OnNetworkMessage(message, from, modslug);
+            }
+            return sceneLight.LightSwitch?.OnNetworkMessage(lsNetworkMessage, from) ?? false;
         }
 
         /// <summary>
@@ -576,17 +598,13 @@ namespace pp.RaftMods.LanternShadows
 
             if (!Raft_Network.IsHost) //request lantern states from host after load
             {
-                mi_network.SendP2P(
-                    mi_network.HostID,
-                    new Message_Battery_OnOff( //just use the battery message as it should never
-                        Messages.Battery_OnOff, 
-                        mi_network.NetworkIDManager,
-                        mi_network.LocalSteamID, 
-                        this.ObjectIndex, 
-                        (int)ELanternRequestType.REQUEST_STATE, //we use the battery uses integer to pass our custom command type 
-                        IsOn),
-                    EP2PSend.k_EP2PSendReliable,
-                    NetworkChannel.Channel_Game);
+                mi_mod.SendNetworkMessageToPlayer(
+                    new LSNetworkMessage
+                    {
+                        Type = ELanternRequestType.REQUEST_STATE,
+                        TargetObjectIndex = ObjectIndex,
+                        IsOn = IsOn
+                    }, mi_network.HostID);
             }
             else if(mi_mod.SavedLightData.ContainsKey(SaveAndLoad.CurrentGameFileName))
             {
@@ -701,20 +719,12 @@ namespace pp.RaftMods.LanternShadows
 			mi_sceneLight.LightComponent.shadows = CLanternShadows.ExtraSettingsAPI_Settings.EnableShadows && _areShadowsOn ? mi_mod.LightShadowType : LightShadows.None;
 		}
 
-		public override bool Deserialize(Message_NetworkBehaviour _msg, CSteamID _remoteID)
+		public bool OnNetworkMessage(LSNetworkMessage _msg, Network_UserId _remoteID)
         {
             if (!mi_loaded) 
-                return base.Deserialize(_msg, _remoteID);
+                return false;
 
-            Messages type = _msg.Type;
-            if (type != Messages.Battery_OnOff) 
-                return base.Deserialize(_msg, _remoteID);
-
-            Message_Battery_OnOff msg = _msg as Message_Battery_OnOff;
-            if (msg == null) 
-                return base.Deserialize(_msg, _remoteID);
-
-            switch((ELanternRequestType)msg.batteryUsesLeft) //we use the uses left value as our command type carrier
+            switch (_msg.Type)
             {
                 case ELanternRequestType.RELEASE_AUTO:
                     UserControlsState = false;
@@ -725,17 +735,20 @@ namespace pp.RaftMods.LanternShadows
                     {
                         if (!UserControlsState) 
                             return true;
-
-                        mi_network.SendP2P(
-                            _remoteID,
-                            new Message_Battery_OnOff(Messages.Battery_OnOff, mi_network.NetworkIDManager, mi_network.LocalSteamID, this.ObjectIndex, (int)ELanternRequestType.TOGGLE, IsOn),
-                            EP2PSend.k_EP2PSendReliable,
-                            NetworkChannel.Channel_Game);
+                        
+                        mi_mod.SendNetworkMessageToPlayer(
+                            new LSNetworkMessage
+                            {
+                                Type = ELanternRequestType.TOGGLE,
+                                TargetObjectIndex = ObjectIndex,
+                                IsOn = IsOn
+                            },
+                            _remoteID);
                     }
                     return true;
                 case ELanternRequestType.TOGGLE:
                     UserControlsState = true;
-                    SetLightOn((_msg as Message_Battery_OnOff)?.on ?? true);
+                    SetLightOn(_msg.IsOn);
                     return true;
             }
             return true;
@@ -840,22 +853,29 @@ namespace pp.RaftMods.LanternShadows
 
 		private void NotifyNetworkPeers(ELanternRequestType requestType)
 		{
-			var netMsg = new Message_Battery_OnOff(
-							Messages.Battery_OnOff,
-							RAPI.GetLocalPlayer().Network.NetworkIDManager,
-							RAPI.GetLocalPlayer().steamID,
-							ObjectIndex,
-							(int)requestType,
-							IsOn);
-
+            var netMsg = new LSNetworkMessage
+            {
+                Type = requestType,
+                TargetObjectIndex = ObjectIndex,
+                IsOn = IsOn
+            };
+            CUtil.Log("Sending net message of type " + requestType);
 			if (Raft_Network.IsHost)
 			{
-				mi_network.RPC(netMsg, Target.Other, EP2PSend.k_EP2PSendReliable, NetworkChannel.Channel_Game);
+                mi_mod.SendNetworkMessage(netMsg);
 				return;
 			}
-			mi_network.SendP2P(mi_network.HostID, netMsg, EP2PSend.k_EP2PSendReliable, NetworkChannel.Channel_Game);
+            mi_mod.SendNetworkMessageToPlayer(netMsg, mi_network.HostID);
 		}
 	}
+
+    [System.Serializable]
+    public class LSNetworkMessage
+    {
+        public ELanternRequestType Type;
+        public uint TargetObjectIndex;
+        public bool IsOn;
+    }
 
     /// <summary>
     /// Wrapper class is used to manage scene lights and their connected components as well as storing meta info about each light.
