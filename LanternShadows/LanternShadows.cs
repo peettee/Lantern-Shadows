@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 using UnityEngine.AzureSky;
 
@@ -921,20 +922,25 @@ namespace pp.RaftMods.LanternShadows
 			ToggleShadowsKeyAlt                 = KeyCode.None;
 		}
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public static bool ExtraSettingsAPI_GetCheckboxState(string _settingName) 
             => true;
 
-		public static KeyCode ExtraSettingsAPI_GetKeybindMain(string _settingName)
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        public static KeyCode ExtraSettingsAPI_GetKeybindMain(string _settingName)
 		   => KeyCode.None;
-		
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public static KeyCode ExtraSettingsAPI_GetKeybindAlt(string _settingName)
 		   => KeyCode.None;
 
 		public static bool ExtraSettingsAPI_Loaded = false;
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public void ExtraSettingsAPI_Load() 
             => ReloadSettings();
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public void ExtraSettingsAPI_SettingsClose() 
             => ReloadSettings();
 
